@@ -921,10 +921,10 @@ function renderCongesDash(){var t=today();var list=congesDashFilter==='avenir'?D
   // Event listeners pour éditer/supprimer
   if(grid){
     grid.onclick=function(ev){
-      var be=ev.target.closest('[data-edit-note]');
-      var bd=ev.target.closest('[data-del-note]');
-      if(be) editNote(be.getAttribute('data-edit-note'));
-      if(bd) deleteNote(bd.getAttribute('data-del-note'));
+      var be=ev.target.closest('[data-eid]');
+      var bd=ev.target.closest('[data-did]');
+      if(be) editNote(be.getAttribute('data-eid'));
+      if(bd) deleteNote(bd.getAttribute('data-did'));
     };
   }
 }
@@ -1243,7 +1243,7 @@ function renderPenseBete(){var notes=loadNotes();var grid=document.getElementByI
     if(n.destinataire) parts.push('<span>Pour : <strong style="color:'+n.color+';">'+n.destinataire+'</strong></span>');
     emetteurHtml='<div style="display:flex;gap:10px;flex-wrap:wrap;font-size:11px;color:var(--text2);padding:6px 8px;background:var(--surface);border-radius:6px;margin-bottom:2px;">'+parts.join('<span style="color:var(--border);">|</span>')+'</div>';
   }
-  return '<div style="background:'+n.color+'18;border:1px solid '+n.color+'55;border-radius:12px;padding:16px;position:relative;display:flex;flex-direction:column;gap:8px;"><div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;"><div style="font-size:13px;font-weight:700;color:'+n.color+';flex:1;">'+(n.title||'Sans titre')+'</div><div style="display:flex;gap:4px;flex-shrink:0;"><button class="btn btn-icon btn-sm" data-edit-note=""+n.id+"" style="cursor:pointer;" class="btn btn-icon btn-sm" title="Modifier">✎</button><button data-del-note=""+n.id+"" style="cursor:pointer;" class="btn btn-icon btn-danger btn-sm" title="Supprimer">✕</button></div></div>'+emetteurHtml+'<div style="font-size:13px;color:var(--text);white-space:pre-wrap;line-height:1.6;">'+(n.content||'')+'</div>'+deadlineHtml+'<div style="font-size:10px;color:var(--text2);margin-top:2px;">Créée le '+fmt(n.date)+'</div></div>';}).join('');}
+  return '<div style="background:'+n.color+'18;border:1px solid '+n.color+'55;border-radius:12px;padding:16px;position:relative;display:flex;flex-direction:column;gap:8px;"><div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;"><div style="font-size:13px;font-weight:700;color:'+n.color+';flex:1;">'+(n.title||'Sans titre')+'</div><div style="display:flex;gap:4px;flex-shrink:0;"><button class="btn btn-icon data-eid='+n.id+' class="btn btn-icon btn-sm" title="Modifier">✎</button><button data-did='+n.id+' class="btn btn-icon btn-danger btn-sm" title="Supprimer">✕</button></div></div>'+emetteurHtml+'<div style="font-size:13px;color:var(--text);white-space:pre-wrap;line-height:1.6;">'+(n.content||'')+'</div>'+deadlineHtml+'<div style="font-size:10px;color:var(--text2);margin-top:2px;">Créée le '+fmt(n.date)+'</div></div>';}).join('');}
 function editNote(id){var notes=loadNotes();var n=notes.find(function(x){return x.id===id;});if(!n)return;pbEditingId=id;document.getElementById('pb-title').value=n.title||'';document.getElementById('pb-content').value=n.content||'';document.getElementById('pb-deadline').value=n.deadline||'';pbSelectedColor=n.color||'#5dd9d3';document.querySelectorAll('.pb-color-dot').forEach(function(d){d.style.border=d.dataset.color===pbSelectedColor?'2px solid white':'2px solid transparent';});if(document.getElementById('pb-emetteur')) document.getElementById('pb-emetteur').value=n.emetteur||'';
   if(document.getElementById('pb-destinataire')) document.getElementById('pb-destinataire').value=n.destinataire||'';
   document.getElementById('btn-save-note').textContent='✓ Modifier la note';document.getElementById('pb-title').focus();}
