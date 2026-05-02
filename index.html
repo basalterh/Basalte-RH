@@ -255,25 +255,48 @@ tr:last-child td{border-bottom:none;}
     </header>
     <div id="content">
       <div id="section-dashboard" class="section active">
-        <div class="card" style="margin-bottom:20px;">
-          <div class="card-title">Répartition contrats</div>
-          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;">
-            <div style="display:flex;gap:24px;flex-wrap:wrap;" id="stats-inline"></div>
-            <div style="display:flex;gap:10px;flex-wrap:wrap;" id="contrats-inline"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
+          <!-- CADRE EFFECTIFS -->
+          <div class="card" style="margin:0;">
+            <div class="card-title" style="margin-bottom:12px;">Effectifs</div>
+            <div style="display:flex;gap:20px;margin-bottom:14px;" id="stats-inline"></div>
+            <div style="border-top:1px solid var(--border);padding-top:10px;margin-bottom:10px;">
+              <p style="font-size:11px;color:var(--text2);margin:0 0 6px;text-transform:uppercase;letter-spacing:0.4px;">Répartition sites</p>
+              <div id="sites-inline" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+            </div>
+            <div style="border-top:1px solid var(--border);padding-top:10px;margin-bottom:10px;">
+              <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+                <span style="width:8px;height:8px;border-radius:50%;background:#6ddc82;display:inline-block;"></span>
+                <p style="font-size:11px;color:var(--text2);margin:0;text-transform:uppercase;letter-spacing:0.4px;">Entrées à prévoir · <span id="entrees-count" style="color:#6ddc82;font-weight:700;"></span></p>
+              </div>
+              <div id="entrees-list" style="display:flex;flex-direction:column;gap:3px;padding-left:14px;"></div>
+            </div>
+            <div style="border-top:1px solid var(--border);padding-top:10px;">
+              <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+                <span style="width:8px;height:8px;border-radius:50%;background:#ff8f8f;display:inline-block;"></span>
+                <p style="font-size:11px;color:var(--text2);margin:0;text-transform:uppercase;letter-spacing:0.4px;">Sorties à prévoir · <span id="sorties-count" style="color:#ff8f8f;font-weight:700;"></span></p>
+              </div>
+              <div id="sorties-list" style="display:flex;flex-direction:column;gap:3px;padding-left:14px;"></div>
+            </div>
+          </div>
+          <!-- CADRE ÉCHÉANCES -->
+          <div class="card" style="margin:0;">
+            <div class="card-title" style="margin-bottom:12px;">Échéances à venir</div>
+            <div id="alertes-list" style="display:flex;flex-direction:column;gap:0;"></div>
           </div>
         </div>
         <div style="display:flex;flex-direction:column;gap:20px;margin-bottom:8px;">
           <div class="card">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
-              <div class="card-title" style="margin-bottom:0;">🔔 Alertes</div>
+              <div class="card-title" style="margin-bottom:0;">📆 Événements</div>
               <div style="display:flex;gap:6px;">
-                <button class="filter-btn active" id="alerte-dash-btn-avenir" onclick="setAlertesDashFilter('avenir')">À venir</button>
-                <button class="filter-btn" id="alerte-dash-btn-passes" onclick="setAlertesDashFilter('passes')">Passés</button>
+                <button class="filter-btn active" id="event-dash-btn-avenir" onclick="setEventsDashFilter('avenir')">À venir</button>
+                <button class="filter-btn" id="event-dash-btn-passes" onclick="setEventsDashFilter('passes')">Passés</button>
               </div>
             </div>
-            <div id="alertes-list" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;overflow:hidden;" data-limit="4"></div>
+            <div id="events-list" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;overflow:hidden;" data-limit="4"></div>
             <div style="display:flex;justify-content:flex-end;margin-top:10px;">
-              <button onclick="toggleDashLimit('alertes-list')" id="btn-more-alertes" class="btn btn-ghost btn-sm" style="font-size:11px;">+ Voir plus</button>
+              <button onclick="toggleDashLimit('events-list')" id="btn-more-events" class="btn btn-ghost btn-sm" style="font-size:11px;">+ Voir plus</button>
             </div>
           </div>
           <div class="card">
@@ -875,51 +898,201 @@ function updateSidebarDate(){var n=new Date();var j=['Dim','Lun','Mar','Mer','Je
 var dashLimits={'conges-dash-list':4,'alertes-list':4,'events-list':4,'notes-dash-list':4};
 function toggleDashLimit(listId){var el=document.getElementById(listId);var total=parseInt(el.dataset.total||0);var current=dashLimits[listId];var btnMap={'conges-dash-list':'btn-more-conges','alertes-list':'btn-more-alertes','events-list':'btn-more-events'};var btn=document.getElementById(btnMap[listId]);if(current<total){dashLimits[listId]=total;if(btn)btn.textContent='− Voir moins';}else{dashLimits[listId]=4;if(btn)btn.textContent='+ Voir plus';}if(listId==='conges-dash-list')renderCongesDash();else if(listId==='alertes-list')renderAlertesDash();else if(listId==='events-list')renderEventsDash();else if(listId==='notes-dash-list')renderNotesDash();}
 function applyDashLimit(listId,items){var el=document.getElementById(listId);var limit=dashLimits[listId]||4;el.dataset.total=items.length;var btnMap={'conges-dash-list':'btn-more-conges','alertes-list':'btn-more-alertes','events-list':'btn-more-events'};var btn=document.getElementById(btnMap[listId]);if(btn){if(items.length<=4){btn.style.display='none';}else{btn.style.display='inline-flex';btn.textContent=limit<items.length?`+ Voir plus (${items.length-limit})`:'− Voir moins';}}return items.slice(0,limit);}
-var congesDashFilter='avenir',eventsDashFilter='avenir',alertesDashFilter='avenir';
-function setAlertesDashFilter(val){alertesDashFilter=val;document.getElementById('alerte-dash-btn-avenir').classList.toggle('active',val==='avenir');document.getElementById('alerte-dash-btn-passes').classList.toggle('active',val==='passes');renderAlertesDash();}
-function renderAlertesDash(){
-  var t=today();var t30=addDays(t,30);var isPast=alertesDashFilter==='passes';var allAlerts=[];
-  if(!isPast){
-    // Entrées à venir <30j
-    DATA.employes.forEach(function(e){if(e.entree&&e.entree>=t&&e.entree<=t30)allAlerts.push({date:e.entree,html:'<div class="alert-item" style="background:rgba(109,220,130,0.08);border-color:rgba(109,220,130,0.25);cursor:pointer;" onclick="navTo(\'employes\')"><span class="alert-icon" style="color:#6ddc82;">↓</span><div class="alert-text"><p style="color:#6ddc82;">'+e.prenom+' '+e.nom+' — Entrée prévue</p><span>'+fmt(e.entree)+'</span></div></div>'});});
-    // Sorties et renouvellements — CDD = alerte unique, CDI = sortie seule
-    DATA.employes.forEach(function(e){
-      if(!e.sortie||e.sortie<t) return;
-      if(e.contrat==='CDD'){
-        // CDD : alerte unique avec 2 boutons si <30j, sinon simple alerte sortie
-        if(e.sortie<=t30){
-          allAlerts.push({date:e.sortie,html:'<div class="alert-item" style="background:rgba(255,185,80,0.08);border-color:rgba(255,185,80,0.3);">'+'<span class="alert-icon" style="color:#ffb950;">↺</span>'+'<div class="alert-text" style="flex:1;">'+'<p style="color:#ffb950;font-weight:600;">'+e.nom+' '+e.prenom+' — CDD se termine le '+fmt(e.sortie)+'</p>'+'<p style="font-size:11px;color:var(--text2);margin-top:3px;">Renouvellement ou sortie définitive ?</p>'+'<div style="display:flex;gap:8px;margin-top:8px;">'+'<button onclick="event.stopPropagation();openModalEmp(\''+e.id+'\')" style="padding:5px 12px;background:rgba(93,217,211,0.15);border:1px solid rgba(93,217,211,0.4);color:var(--accent);border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;">✎ Modifier</button>'+'<button onclick="event.stopPropagation();confirmerSortie(\''+e.id+'\')" style="padding:5px 12px;background:rgba(255,127,127,0.15);border:1px solid rgba(255,127,127,0.4);color:#ff8f8f;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;">↑ Confirmer sortie</button>'+'</div></div></div>'});
-        } else {
-          // CDD sortie >30j : simple alerte
-          allAlerts.push({date:e.sortie,html:'<div class="alert-item" style="background:rgba(255,143,143,0.08);border-color:rgba(255,143,143,0.25);cursor:pointer;" onclick="openModalEmp(\''+e.id+'\')"><span class="alert-icon" style="color:#ff8f8f;">↑</span><div class="alert-text"><p style="color:#ff8f8f;">'+e.nom+' '+e.prenom+' — Fin CDD</p><span>'+fmt(e.sortie)+'</span></div></div>'});
-        }
-      } else {
-        // CDI ou autre : alerte sortie simple
-        allAlerts.push({date:e.sortie,html:'<div class="alert-item" style="background:rgba(255,143,143,0.08);border-color:rgba(255,143,143,0.25);cursor:pointer;" onclick="openModalEmp(\''+e.id+'\')"><span class="alert-icon" style="color:#ff8f8f;">↑</span><div class="alert-text"><p style="color:#ff8f8f;">'+e.nom+' '+e.prenom+' — Sortie prévue</p><span>'+fmt(e.sortie)+'</span></div></div>'});
-      }
-    });
-    // Congés en attente
-    DATA.conges.filter(function(c){return c.statut==='En attente';}).forEach(function(c){var e=getEmp(c.empId);allAlerts.push({date:c.start,html:'<div class="alert-item" style="cursor:pointer;" onclick="openModalConge(\''+c.id+'\')"><span class="alert-icon">⏳</span><div class="alert-text"><p>'+(e?e.prenom+' '+e.nom:'—')+' — Congé en attente</p><span>'+fmt(c.start)+' → '+fmt(c.end)+'</span></div></div>'});});
-    // Événements / RDV / vacances <30j
-    ensureEvents();DATA.events.filter(function(ev){return ev.endDate>=t&&ev.startDate<=t30;}).forEach(function(ev){var c=ev.color||'#b39ddb';var icon=ev.type==='rdv'?'📍':ev.type==='vacances'?'🌴':'📅';allAlerts.push({date:ev.startDate,html:'<div class="alert-item" style="background:'+c+'18;border-color:'+c+'44;cursor:pointer;" onclick="openModalEventEdit(\''+ev.id+'\')"><span class="alert-icon" style="color:'+c+';">'+icon+'</span><div class="alert-text"><p style="color:'+c+';">'+ev.title+(ev.site?' · '+getSiteName(ev.site):'')+'</p><span>'+fmt(ev.startDate)+(ev.endDate!==ev.startDate?' → '+fmt(ev.endDate):'')+'</span></div></div>'});});
-    // Pense-bête avec échéance <30j
-    var notes=loadNotes();notes.filter(function(n){return n.deadline&&n.deadline>=t&&n.deadline<=t30;}).forEach(function(n){var dcolor=n.deadline<=addDays(t,7)?'#ffb950':n.color;allAlerts.push({date:n.deadline,html:'<div class="alert-item" style="background:'+n.color+'18;border-color:'+n.color+'44;cursor:pointer;" onclick="navTo(\'pensebete\')"><span class="alert-icon" style="color:'+dcolor+';">📝</span><div class="alert-text"><p style="color:'+n.color+';font-weight:600;">'+(n.title||'Note')+'</p><span>Échéance : '+fmt(n.deadline)+'</span></div></div>'});});
-    allAlerts.sort(function(a,b){return a.date.localeCompare(b.date);});
-  }else{
-    DATA.employes.forEach(function(e){if(e.entree&&e.entree<t)allAlerts.push({date:e.entree,html:'<div class="alert-item" style="opacity:0.7;cursor:pointer;" onclick="navTo(\'employes\')"><span class="alert-icon">↓</span><div class="alert-text"><p>'+e.prenom+' '+e.nom+' — Entrée</p><span>'+fmt(e.entree)+'</span></div></div>'});});
-    DATA.employes.forEach(function(e){if(e.sortie&&e.sortie<t)allAlerts.push({date:e.sortie,html:'<div class="alert-item" style="opacity:0.7;cursor:pointer;" onclick="navTo(\'employes\')"><span class="alert-icon">↑</span><div class="alert-text"><p>'+e.prenom+' '+e.nom+' — Sortie</p><span>'+fmt(e.sortie)+'</span></div></div>'});});
-    allAlerts.sort(function(a,b){return b.date.localeCompare(a.date);});
-  }
-  var items=allAlerts.map(function(a){return a.html;});
-  var shown=applyDashLimit('alertes-list',items);
-  document.getElementById('alertes-list').innerHTML=shown.join('')||'<p style="color:var(--text2);font-size:13px;grid-column:1/-1;">Aucune alerte '+(isPast?'passée':'à venir')+'</p>';
+var congesDashFilter='avenir',eventsDashFilter='avenir';
+
+function urgencyColor(date){
+  var t=today();
+  var diff=Math.ceil((new Date(date)-new Date(t))/(1000*3600*24));
+  if(diff<=10) return '#ff8f8f'; // rouge
+  if(diff<=20) return '#ffb950'; // orange
+  return '#6ddc82'; // vert
 }
-function setEventsDashFilter(val){eventsDashFilter=val;document.getElementById('event-dash-btn-avenir').classList.toggle('active',val==='avenir');document.getElementById('event-dash-btn-passes').classList.toggle('active',val==='passes');renderEventsDash();}
+
+function urgencyBg(date){
+  var c=urgencyColor(date);
+  if(c==='#ff8f8f') return 'rgba(255,143,143,0.08)';
+  if(c==='#ffb950') return 'rgba(255,185,80,0.08)';
+  return 'rgba(109,220,130,0.08)';
+}
+
+function urgencyBorder(date){
+  var c=urgencyColor(date);
+  if(c==='#ff8f8f') return 'rgba(255,143,143,0.3)';
+  if(c==='#ffb950') return 'rgba(255,185,80,0.3)';
+  return 'rgba(109,220,130,0.3)';
+}
+
+function daysLabel(date){
+  var t=today();
+  var diff=Math.ceil((new Date(date)-new Date(t))/(1000*3600*24));
+  if(diff===0) return "Aujourd\'hui";
+  if(diff===1) return "Demain";
+  if(diff<0) return Math.abs(diff)+' j passés';
+  return diff+' j';
+}
+
+function renderAlertesDash(){
+  var t=today();
+  var t31=addDays(t,31);
+  var allAlerts=[];
+
+  // Entrées à venir (< 31j)
+  DATA.employes.forEach(function(e){
+    if(e.entree&&e.entree>=t&&e.entree<=t31){
+      var uc=urgencyColor(e.entree);
+      allAlerts.push({date:e.entree,html:
+        '<div class="alert-item" style="background:'+urgencyBg(e.entree)+';border-color:'+urgencyBorder(e.entree)+';cursor:pointer;padding:8px 12px;" onclick="navTo(\'employes\')">'
+        +'<span style="width:10px;height:10px;border-radius:50%;background:'+uc+';flex-shrink:0;margin-top:3px;"></span>'
+        +'<div class="alert-text" style="flex:1;">'
+        +'<div style="display:flex;justify-content:space-between;align-items:center;">'
+        +'<p style="color:'+uc+';font-weight:600;font-size:12px;">↓ Entrée — '+e.prenom+' '+e.nom+'</p>'
+        +'<span style="font-size:11px;font-weight:700;color:'+uc+';">'+daysLabel(e.entree)+'</span>'
+        +'</div>'
+        +'<span style="font-size:11px;color:var(--text2);">'+fmt(e.entree)+(e.site?' · '+getSiteName(e.site):'')+'</span>'
+        +'</div></div>'
+      });
+    }
+  });
+
+  // Sorties à venir (< 31j)
+  DATA.employes.forEach(function(e){
+    if(e.sortie&&e.sortie>=t&&e.sortie<=t31){
+      var uc=urgencyColor(e.sortie);
+      allAlerts.push({date:e.sortie,html:
+        '<div class="alert-item" style="background:'+urgencyBg(e.sortie)+';border-color:'+urgencyBorder(e.sortie)+';padding:8px 12px;">'
+        +'<span style="width:10px;height:10px;border-radius:50%;background:'+uc+';flex-shrink:0;margin-top:3px;"></span>'
+        +'<div class="alert-text" style="flex:1;">'
+        +'<div style="display:flex;justify-content:space-between;align-items:center;">'
+        +'<p style="color:'+uc+';font-weight:600;font-size:12px;">↑ Fin contrat — '+e.nom+' '+e.prenom+'</p>'
+        +'<span style="font-size:11px;font-weight:700;color:'+uc+';">'+daysLabel(e.sortie)+'</span>'
+        +'</div>'
+        +'<span style="font-size:11px;color:var(--text2);">'+fmt(e.sortie)+(e.site?' · '+getSiteName(e.site):'')+'</span>'
+        +'<div style="display:flex;gap:6px;margin-top:6px;">'
+        +'<button onclick="event.stopPropagation();openModalEmp(\''+e.id+'\');" style="padding:4px 10px;background:rgba(93,217,211,0.15);border:1px solid rgba(93,217,211,0.4);color:var(--accent);border-radius:6px;font-size:10px;font-weight:600;cursor:pointer;font-family:inherit;">✎ Modifier</button>'
+        +'<button onclick="event.stopPropagation();confirmerSortie(\''+e.id+'\');" style="padding:4px 10px;background:rgba(255,127,127,0.15);border:1px solid rgba(255,127,127,0.4);color:#ff8f8f;border-radius:6px;font-size:10px;font-weight:600;cursor:pointer;font-family:inherit;">↑ Confirmer sortie</button>'
+        +'</div></div></div>'
+      });
+    }
+  });
+
+  // Congés à venir (< 31j) — approuvés et en attente
+  DATA.conges.filter(function(c){return c.start>=t&&c.start<=t31&&c.statut!=='Refusé';}).forEach(function(c){
+    var e=getEmp(c.empId);
+    var uc=urgencyColor(c.start);
+    var isAttente=c.statut==='En attente';
+    allAlerts.push({date:c.start,html:
+      '<div class="alert-item" style="background:'+urgencyBg(c.start)+';border-color:'+urgencyBorder(c.start)+';cursor:pointer;padding:8px 12px;" onclick="openModalConge(\''+c.id+'\')">'
+      +'<span style="width:10px;height:10px;border-radius:50%;background:'+uc+';flex-shrink:0;margin-top:3px;"></span>'
+      +'<div class="alert-text" style="flex:1;">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;">'
+      +'<p style="color:'+uc+';font-weight:600;font-size:12px;">🏖 Congé '+(isAttente?'<span style=\"color:#ffb950;font-size:10px;\">(En attente)</span>':'')+' — '+(e?e.prenom+' '+e.nom:'—')+'</p>'
+      +'<span style="font-size:11px;font-weight:700;color:'+uc+';">'+daysLabel(c.start)+'</span>'
+      +'</div>'
+      +'<span style="font-size:11px;color:var(--text2);">'+fmt(c.start)+' → '+fmt(c.end)+' · '+daysBetween(c.start,c.end)+'j</span>'
+      +'</div></div>'
+    });
+  });
+
+  // Événements & RDV à venir (< 31j)
+  ensureEvents();
+  DATA.events.filter(function(ev){return ev.startDate>=t&&ev.startDate<=t31;}).forEach(function(ev){
+    var uc=urgencyColor(ev.startDate);
+    var icon=ev.type==='rdv'?'📍':ev.type==='vacances'?'🌴':'📅';
+    allAlerts.push({date:ev.startDate,html:
+      '<div class="alert-item" style="background:'+urgencyBg(ev.startDate)+';border-color:'+urgencyBorder(ev.startDate)+';cursor:pointer;padding:8px 12px;" onclick="openModalEventEdit(\''+ev.id+'\')">'
+      +'<span style="width:10px;height:10px;border-radius:50%;background:'+uc+';flex-shrink:0;margin-top:3px;"></span>'
+      +'<div class="alert-text" style="flex:1;">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;">'
+      +'<p style="color:'+uc+';font-weight:600;font-size:12px;">'+icon+' '+ev.title+(ev.site?' · '+getSiteName(ev.site):'')+'</p>'
+      +'<span style="font-size:11px;font-weight:700;color:'+uc+';">'+daysLabel(ev.startDate)+'</span>'
+      +'</div>'
+      +'<span style="font-size:11px;color:var(--text2);">'+fmt(ev.startDate)+(ev.endDate!==ev.startDate?' → '+fmt(ev.endDate):'')+'</span>'
+      +'</div></div>'
+    });
+  });
+
+  // Notes avec échéance (< 31j)
+  var notes=loadNotes();
+  notes.filter(function(n){return n.deadline&&n.deadline>=t&&n.deadline<=t31;}).forEach(function(n){
+    var uc=urgencyColor(n.deadline);
+    allAlerts.push({date:n.deadline,html:
+      '<div class="alert-item" style="background:'+urgencyBg(n.deadline)+';border-color:'+urgencyBorder(n.deadline)+';cursor:pointer;padding:8px 12px;" onclick="navTo(&quot;pensebete&quot;)">'
+      +'<span style="width:10px;height:10px;border-radius:50%;background:'+uc+';flex-shrink:0;margin-top:3px;"></span>'
+      +'<div class="alert-text" style="flex:1;">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;">'
+      +'<p style="color:'+uc+';font-weight:600;font-size:12px;">📝 '+(n.title||'Note sans titre')+'</p>'
+      +'<span style="font-size:11px;font-weight:700;color:'+uc+';">'+daysLabel(n.deadline)+'</span>'
+      +'</div>'
+      +'<span style="font-size:11px;color:var(--text2);">Échéance : '+fmt(n.deadline)+'</span>'
+      +'</div></div>'
+    });
+  });
+
+  // Trier par date chronologique
+  allAlerts.sort(function(a,b){return a.date.localeCompare(b.date);});
+
+  var el=document.getElementById('alertes-list');
+  el.innerHTML=allAlerts.map(function(a){return a.html;}).join('')
+    ||'<p style="color:var(--text2);font-size:13px;">Aucune échéance dans les 31 prochains jours</p>';
+}
+
 function renderEventsDash(){ensureEvents();var t=today();var isPast=eventsDashFilter==='passes';var list=isPast?DATA.events.filter(function(ev){return ev.endDate<t;}).sort(function(a,b){return b.startDate.localeCompare(a.startDate);}):DATA.events.filter(function(ev){return ev.endDate>=t;}).sort(function(a,b){return a.startDate.localeCompare(b.startDate);});var allEvents=list.map(function(ev){var siteLabel=ev.site?` · ${getSiteName(ev.site)}`:'';var timeLabel=ev.allDay?'Journée entière':`${ev.startTime||''} – ${ev.endTime||''}`;var c=ev.color||'#b39ddb';return `<div class="alert-item" style="background:${c}18;border-color:${c}44;cursor:pointer;" onclick="navTo('calendrier')"><span class="alert-icon" style="color:${c};">●</span><div class="alert-text"><p style="color:${c};">${ev.title}${siteLabel}</p><span>${fmt(ev.startDate)}${ev.endDate!==ev.startDate?' → '+fmt(ev.endDate):''} · ${timeLabel}</span></div></div>`;});var shown=applyDashLimit('events-list',allEvents);document.getElementById('events-list').innerHTML=shown.join('')||`<p style="color:var(--text2);font-size:13px;grid-column:1/-1;">Aucun événement ${isPast?'passé':'à venir'}</p>`;}
 function setCongesDashFilter(val){congesDashFilter=val;document.getElementById('conge-dash-btn-avenir').classList.toggle('active',val==='avenir');document.getElementById('conge-dash-btn-passes').classList.toggle('active',val==='passes');renderCongesDash();}
 function renderCongesDash(){var t=today();var list=congesDashFilter==='avenir'?DATA.conges.filter(function(c){return c.end>=t&&c.statut!=='Refusé';}).sort(function(a,b){return a.start.localeCompare(b.start);}):DATA.conges.filter(function(c){return c.end<t;}).sort(function(a,b){return b.start.localeCompare(a.start);});var isPast=congesDashFilter==='passes';var color=isPast?'#ffe082':'#6ec9ff';var bg=isPast?'rgba(255,224,130,0.08)':'rgba(110,201,255,0.08)';var border=isPast?'rgba(255,224,130,0.25)':'rgba(110,201,255,0.25)';var el=document.getElementById('conges-dash-list');if(!list.length){el.innerHTML=`<p style="color:var(--text2);font-size:13px;grid-column:1/-1;">Aucun congé ${isPast?'passé':'à venir'}</p>`;var btn=document.getElementById('btn-more-conges');if(btn)btn.style.display='none';return;}var shown=applyDashLimit('conges-dash-list',list);el.innerHTML=shown.map(function(c){var e=getEmp(c.empId);var dur=daysBetween(c.start,c.end);return `<div class="alert-item" style="background:${bg};border-color:${border};"><span class="alert-icon" style="color:${color};">🏖</span><div class="alert-text"><p style="color:${color};">${e?`${e.prenom} ${e.nom}`:'—'} — ${c.type}</p><span>${fmt(c.start)} → ${fmt(c.end)} · ${dur}j · ${getStatutBadge(c.statut)}</span></div></div>`;}).join('');
 }
-function renderDashboard(){var actifs=getActiveEmployes();var cdi=actifs.filter(function(e){return e.contrat==='CDI';}).length;var cdd=actifs.filter(function(e){return e.contrat==='CDD';}).length;var total=actifs.length;document.getElementById('stats-inline').innerHTML=[{label:'Employés actifs',value:total,color:'var(--accent)'},{label:'CDI',value:cdi,color:'#48d1cc'},{label:'CDD',value:cdd,color:'var(--accent)'}].map(s=>`<div style="display:flex;flex-direction:column;gap:2px;padding-right:24px;border-right:1px solid var(--border);"><span style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:0.4px;">${s.label}</span><span style="font-size:28px;font-weight:700;color:${s.color};">${s.value}</span></div>`).join('');document.getElementById('contrats-inline').innerHTML=[['CDI',cdi,total,'#48d1cc'],['CDD',cdd,total,'var(--accent)']].map(([type,n,t,c])=>`<div style="background:${c}18;border:1px solid ${c}44;border-radius:10px;padding:8px 14px;text-align:center;"><div style="font-size:11px;color:${c};font-weight:600;">${type}</div><div style="font-size:18px;font-weight:700;color:${c};">${n}</div><div style="font-size:10px;color:var(--text2);">${t>0?Math.round(n/t*100):0}%</div></div>`).join('');renderAlertesDash();renderEventsDash();renderCongesDash();renderNotesDash();}
+function renderDashboard(){
+  var actifs=getActiveEmployes();
+  var cdi=actifs.filter(function(e){return e.contrat==='CDI';}).length;
+  var cdd=actifs.filter(function(e){return e.contrat==='CDD';}).length;
+  var total=actifs.length;
+  var t=today();
+
+  // Stats inline
+  document.getElementById('stats-inline').innerHTML=[
+    {label:'Total',value:total,color:'var(--text)'},
+    {label:'CDI',value:cdi,color:'#6ddc82'},
+    {label:'CDD',value:cdd,color:'var(--accent)'}
+  ].map(function(s){
+    return '<div style="display:flex;flex-direction:column;gap:2px;padding-right:20px;border-right:1px solid var(--border);">'
+      +'<span style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:0.4px;">'+s.label+'</span>'
+      +'<span style="font-size:26px;font-weight:700;color:'+s.color+';">'+s.value+'</span>'
+      +'</div>';
+  }).join('');
+
+  // Sites
+  var siteCount={};
+  actifs.forEach(function(e){
+    var s=e.site||'?';
+    siteCount[s]=(siteCount[s]||0)+1;
+  });
+  var siteColors={'BE1':'#1D9E75','BE2':'#185FA5','BE3':'#854F0B'};
+  var siteBg={'BE1':'rgba(29,158,117,0.12)','BE2':'rgba(24,95,165,0.12)','BE3':'rgba(133,79,11,0.12)'};
+  document.getElementById('sites-inline').innerHTML=Object.entries(siteCount).map(function(entry){
+    var s=entry[0],n=entry[1];
+    var c=siteColors[s]||'var(--text2)';
+    var bg=siteBg[s]||'rgba(160,152,144,0.12)';
+    return '<span style="background:'+bg+';color:'+c+';font-size:11px;font-weight:600;padding:2px 10px;border-radius:20px;">'+s+' · '+n+'</span>';
+  }).join('');
+
+  // Entrées à venir (futures)
+  var entrees=DATA.employes.filter(function(e){return e.entree&&e.entree>t;}).sort(function(a,b){return a.entree.localeCompare(b.entree);});
+  document.getElementById('entrees-count').textContent=entrees.length;
+  document.getElementById('entrees-list').innerHTML=entrees.length
+    ? entrees.map(function(e){return '<span style="font-size:11px;color:var(--text);">'+e.prenom+' '+e.nom+' <span style="color:var(--text2);">· '+e.contrat+'</span></span>';}).join('')
+    : '<span style="font-size:11px;color:var(--text2);">Aucune entrée prévue</span>';
+
+  // Sorties à venir (futures)
+  var sorties=DATA.employes.filter(function(e){return e.sortie&&e.sortie>t;}).sort(function(a,b){return a.sortie.localeCompare(b.sortie);});
+  document.getElementById('sorties-count').textContent=sorties.length;
+  document.getElementById('sorties-list').innerHTML=sorties.length
+    ? sorties.map(function(e){return '<span style="font-size:11px;color:var(--text);">'+e.prenom+' '+e.nom+' <span style="color:var(--text2);">· '+e.contrat+'</span></span>';}).join('')
+    : '<span style="font-size:11px;color:var(--text2);">Aucune sortie prévue</span>';
+
+  renderAlertesDash();
+  renderEventsDash();
+  renderCongesDash();
+  renderNotesDash();
+}
 var empFilters={search:'',contrat:'all',site:'',poste:'',actif:'actif'};
 function toggleActifSwitch(){var knob=document.getElementById('switch-actif-knob'),track=document.getElementById('switch-actif');var lA=document.getElementById('switch-label-actif'),lI=document.getElementById('switch-label-inactif');if(empFilters.actif==='actif'){empFilters.actif='inactif';if(track)track.style.background='#ff8f8f';if(knob){knob.style.right='auto';knob.style.left='2px';}if(lA){lA.style.color='var(--text2)';lA.style.fontWeight='400';}if(lI){lI.style.color='#ff8f8f';lI.style.fontWeight='600';}}else{empFilters.actif='actif';if(track)track.style.background='#6ddc82';if(knob){knob.style.left='auto';knob.style.right='2px';}if(lA){lA.style.color='#6ddc82';lA.style.fontWeight='600';}if(lI){lI.style.color='var(--text2)';lI.style.fontWeight='400';}}renderEmployes();}
 function initSwitchActif(){var track=document.getElementById('switch-actif'),knob=document.getElementById('switch-actif-knob');var lA=document.getElementById('switch-label-actif'),lI=document.getElementById('switch-label-inactif');if(!track)return;if(empFilters.actif==='actif'){track.style.background='#6ddc82';if(knob){knob.style.left='auto';knob.style.right='2px';}if(lA){lA.style.color='#6ddc82';lA.style.fontWeight='600';}if(lI){lI.style.color='var(--text2)';lI.style.fontWeight='400';}}else{track.style.background='#ff8f8f';if(knob){knob.style.right='auto';knob.style.left='2px';}if(lI){lI.style.color='#ff8f8f';lI.style.fontWeight='600';}if(lA){lA.style.color='var(--text2)';lA.style.fontWeight='400';}}}
