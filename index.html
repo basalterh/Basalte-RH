@@ -261,24 +261,32 @@ tr:last-child td{border-bottom:none;}
           <!-- Effectifs -->
           <div class="card" style="margin:0;padding:16px;">
             <div class="card-title" style="font-size:11px;letter-spacing:1px;margin-bottom:10px;">EFFECTIFS</div>
-            <div style="display:flex;gap:16px;margin-bottom:12px;" id="stats-inline"></div>
-            <div style="border-top:1px solid var(--border);padding-top:10px;margin-bottom:10px;">
-              <p style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin:0 0 6px;">Répartition sites</p>
-              <div id="sites-inline" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
-            </div>
-            <div style="border-top:1px solid var(--border);padding-top:10px;margin-bottom:10px;">
-              <div style="display:flex;align-items:center;gap:5px;margin-bottom:5px;">
-                <span style="width:7px;height:7px;border-radius:50%;background:#6ddc82;display:inline-block;flex-shrink:0;"></span>
-                <p style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin:0;">Entrées à prévoir · <span id="entrees-count" style="color:#6ddc82;font-weight:700;"></span></p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+              <!-- Gauche : stats + sites -->
+              <div>
+                <div style="display:flex;gap:12px;margin-bottom:10px;" id="stats-inline"></div>
+                <div>
+                  <p style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin:0 0 5px;">Sites</p>
+                  <div id="sites-inline" style="display:flex;gap:5px;flex-wrap:wrap;"></div>
+                </div>
               </div>
-              <div id="entrees-list" style="display:flex;flex-direction:column;gap:3px;padding-left:12px;"></div>
-            </div>
-            <div style="border-top:1px solid var(--border);padding-top:10px;">
-              <div style="display:flex;align-items:center;gap:5px;margin-bottom:5px;">
-                <span style="width:7px;height:7px;border-radius:50%;background:#ff8f8f;display:inline-block;flex-shrink:0;"></span>
-                <p style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin:0;">Sorties à prévoir · <span id="sorties-count" style="color:#ff8f8f;font-weight:700;"></span></p>
+              <!-- Droite : entrées + sorties -->
+              <div style="border-left:1px solid var(--border);padding-left:12px;">
+                <div style="margin-bottom:10px;">
+                  <div style="display:flex;align-items:center;gap:5px;margin-bottom:4px;">
+                    <span style="width:7px;height:7px;border-radius:50%;background:#6ddc82;display:inline-block;flex-shrink:0;"></span>
+                    <p style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin:0;">Entrées à venir · <span id="entrees-count" style="color:#6ddc82;font-weight:700;"></span></p>
+                  </div>
+                  <div id="entrees-list" style="display:flex;flex-direction:column;gap:2px;padding-left:12px;"></div>
+                </div>
+                <div style="border-top:1px solid var(--border);padding-top:8px;">
+                  <div style="display:flex;align-items:center;gap:5px;margin-bottom:4px;">
+                    <span style="width:7px;height:7px;border-radius:50%;background:#ff8f8f;display:inline-block;flex-shrink:0;"></span>
+                    <p style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin:0;">Sorties à venir · <span id="sorties-count" style="color:#ff8f8f;font-weight:700;"></span></p>
+                  </div>
+                  <div id="sorties-list" style="display:flex;flex-direction:column;gap:2px;padding-left:12px;"></div>
+                </div>
               </div>
-              <div id="sorties-list" style="display:flex;flex-direction:column;gap:3px;padding-left:12px;"></div>
             </div>
           </div>
 
@@ -1129,7 +1137,9 @@ function renderDashboard(){
   var siteBg={'BE1':'rgba(29,158,117,0.12)','BE2':'rgba(24,95,165,0.12)','BE3':'rgba(133,79,11,0.12)'};
   document.getElementById('sites-inline').innerHTML=Object.entries(siteCount).map(function(entry){
     var s=entry[0],n=entry[1];
-    return '<span style="background:'+(siteBg[s]||'rgba(160,152,144,0.12)')+';color:'+(siteColors[s]||'var(--text2)')+';font-size:11px;font-weight:600;padding:2px 10px;border-radius:20px;">'+s+' · '+n+'</span>';
+    var siteName=(DATA.sites[s]&&DATA.sites[s].name)||s;
+    var siteCol=(DATA.sites[s]&&DATA.sites[s].color)||'var(--accent)';
+    return '<span style="background:'+siteCol+'22;color:'+siteCol+';font-size:11px;font-weight:600;padding:2px 10px;border-radius:20px;border:1px solid '+siteCol+'44;">'+siteName+' · '+n+'</span>';
   }).join('');
 
   // Entrées futures
