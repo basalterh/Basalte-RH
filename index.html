@@ -994,7 +994,7 @@ function renderEcheancesResume(){
         && (dest===''||dest===meLower||dest.indexOf(meLower)>=0);
     });
     nouvellesNotes.forEach(function(n){
-      var auteur=n.emetteur||'quelqu'un';
+      var auteur=n.emetteur||'quelquun';
       var dest=n.destinataire?(' pour '+n.destinataire):'';
       newNoteItems.push({
         label:'💡 Nouvelle note de '+auteur+dest,
