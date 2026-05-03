@@ -979,7 +979,7 @@ function renderEcheancesResume(){
   var notes=loadNotes().filter(function(n){return n.deadline&&n.deadline>=t&&n.deadline<=t31;});
   if(notes.length) items.push({label:'Note',count:notes.length,minDate:notes[0].deadline});
 
-  // Nouvelles notes depuis la dernière connexion (par d'autres utilisateurs)
+  // Nouvelles notes depuis la derniere connexion par dautres utilisateurs
   var lastLogin=window._lastLogin;
   var moi=window._fbCurrentUser||'';
   if(lastLogin){
@@ -988,7 +988,7 @@ function renderEcheancesResume(){
       var auteur=(n.emetteur||'').toLowerCase();
       var dest=(n.destinataire||'').toLowerCase();
       var meLower=moi.toLowerCase();
-      // Note créée après la dernière connexion, par quelqu'un d'autre, pour moi ou pour tout le monde
+      // Note cree apres la derniere connexion, par quelquun dautre, pour moi ou pour tout le monde
       return n.createdAt>lastLogin
         && auteur!==meLower
         && (dest===''||dest===meLower||dest.indexOf(meLower)>=0);
@@ -1751,7 +1751,7 @@ function openAddShiftOnDay(planId, day) {
       return (raw.match(/\d+[,\.]\d{2}/g) || []).map(function(n){ return parseFloat(n.replace(',','.')); });
     }
 
-    // Congés de l'année
+    // Conges de lannee
     var anneeM = t.match(/Cong[ée]s de l.ann[ée]e\s*((?:[\d,\.]+\s*){1,3})/i);
     if(anneeM){
       var nums = splitNums(anneeM[1]);
@@ -1760,7 +1760,7 @@ function openAddShiftOnDay(planId, day) {
       else if(nums.length === 1){ data.acquisN=nums[0]; data.soldeN=nums[0]; }
     }
 
-    // Congés en cours d'acquisition
+    // Conges en cours dacquisition
     var acqM = t.match(/Cong[ée]s en cours d.acquisition\s*((?:[\d,\.]+\s*){1,3})/i);
     if(acqM){
       var nums2 = splitNums(acqM[1]);
@@ -2063,7 +2063,7 @@ function exportRecapPDF(){
   setTimeout(function(){ win.print(); }, 500);
 }
 
-// Init différée — les éléments n'existent que quand la section est active
+// Init differee - les elements nexistent que quand la section est active
 function initRecapContrats(){
   var btn = document.getElementById('btn-export-recap-pdf');
   if(btn && !btn._bound){ btn._bound=true; btn.addEventListener('click', exportRecapPDF); }
@@ -2075,6 +2075,101 @@ function initRecapContrats(){
 // ===== FIN RÉCAP CONTRATS =====
 
 // ===== FIN PATCH MINIMAL =====
+
+
+function exportPlanningPDF(){
+  if(!currentPlanId){showToast('Aucun planning selectionne');return;}
+  ensureTemplates();
+  var plan=DATA.templates.find(function(p){return p.id===currentPlanId;});
+  if(!plan){showToast('Planning introuvable');return;}
+
+  var siteName=getSiteName(plan.site)||plan.site;
+  var planName=plan.name||'Planning';
+  var numShifts=parseInt(plan.numShifts)||1;
+  var dayConfigs=plan.dayConfigs||{};
+  var DAYS=['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
+  var SHIFT_COLORS=['#5dd9d3','#6ec9ff','#ffb950','#ff85c2','#6ddc82','#b39ddb','#ff8f8f'];
+
+  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>'+planName+' - '+siteName+'</title>'
+    +'<style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:Arial,sans-serif;background:#fff;color:#1a1a1a;padding:20px;font-size:12px;}'
+    +'table{width:100%;border-collapse:collapse;}th,td{border:1px solid #ddd;padding:6px;vertical-align:top;}'
+    +'th{background:#f0f0f0;font-size:11px;text-transform:uppercase;text-align:center;}'
+    +'.recap-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-top:12px;}'
+    +'.recap-card{background:#f8f8f8;border:1px solid #ddd;border-radius:6px;padding:10px;}'
+    +'.btn-print{padding:8px 20px;background:#333;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;margin-bottom:16px;}'
+    +'@media print{.no-print{display:none!important;}*{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}'
+    +'</style></head><body>';
+
+  // En-tete
+  html+='<div style="margin-bottom:16px;padding-bottom:12px;border-bottom:2px solid #333;">'
+    +'<h1 style="font-size:18px;font-weight:700;">'+planName+'</h1>'
+    +'<div style="font-size:12px;color:#555;margin-top:4px;">Site : <strong>'+siteName+'</strong> &nbsp;·&nbsp; '+new Date().toLocaleDateString('fr-FR')+'</div>'
+    +'</div>';
+
+  html+='<div class="no-print"><button class="btn-print" onclick="window.print()">Imprimer / Sauvegarder PDF</button></div>';
+
+  // Tableau shifts
+  html+='<table><thead><tr><th style="min-width:80px;">Shift</th>';
+  DAYS.forEach(function(d){html+='<th>'+d+'</th>';});
+  html+='</tr></thead><tbody>';
+
+  for(var s=0;s<numShifts;s++){
+    var shiftColor=SHIFT_COLORS[s%SHIFT_COLORS.length];
+    var shiftName=plan.shiftNames&&plan.shiftNames[s]?plan.shiftNames[s]:'Shift '+(s+1);
+    html+='<tr><td style="background:'+shiftColor+'33;font-weight:700;font-size:11px;">'+shiftName+'</td>';
+    for(var d=0;d<7;d++){
+      var key=d+'_'+s;
+      var cfg=dayConfigs[key];
+      html+='<td style="min-width:90px;">';
+      if(cfg&&cfg.start&&cfg.end){
+        var persons=cfg.persons||[];
+        var assigned=persons.filter(function(p){return p.empId;});
+        var hrs=hoursBetween(cfg.start,cfg.end);
+        var cardColor=shiftColor;
+        if(assigned.length===1){var e1=getEmp(assigned[0].empId);if(e1&&e1.color)cardColor=e1.color;}
+        html+='<div style="background:'+cardColor+';border-radius:5px;padding:5px 6px;">'
+          +'<div style="font-size:10px;font-weight:700;color:rgba(10,14,20,0.8);">'+cfg.start+' - '+cfg.end+'</div>';
+        assigned.forEach(function(p){
+          var emp=getEmp(p.empId);if(!emp)return;
+          html+='<div style="margin-top:3px;padding-top:3px;border-top:1px solid rgba(0,0,0,0.1);">'
+            +'<div style="display:flex;align-items:center;gap:3px;">'
+            +'<span style="width:5px;height:5px;border-radius:50%;background:'+(emp.color||shiftColor)+';display:inline-block;"></span>'
+            +'<span style="font-size:10px;font-weight:700;">'+emp.nom+' '+emp.prenom+'</span></div>';
+          if(p.poste)html+='<div style="font-size:9px;color:rgba(0,0,0,0.55);padding-left:8px;">'+p.poste+'</div>';
+          html+='<div style="font-size:9px;font-weight:700;padding-left:8px;">'+hrs.toFixed(1)+'h</div></div>';
+        });
+        if(!assigned.length)html+='<div style="font-size:9px;color:rgba(0,0,0,0.4);margin-top:3px;font-style:italic;">Non affecte</div>';
+        html+='</div>';
+      }else{html+='<div style="color:#ccc;font-size:10px;text-align:center;padding:8px 0;">-</div>';}
+      html+='</td>';
+    }
+    html+='</tr>';
+  }
+  html+='</tbody></table>';
+
+  // Recap
+  var recap=buildRecap(plan,numShifts,dayConfigs);
+  if(recap.length){
+    html+='<div style="margin-top:16px;padding-top:12px;border-top:2px solid #333;">'
+      +'<h2 style="font-size:14px;font-weight:700;margin-bottom:10px;">Recapitulatif hebdomadaire</h2>'
+      +'<div class="recap-grid">';
+    recap.forEach(function(r){
+      html+='<div class="recap-card">'
+        +'<div style="font-size:12px;font-weight:700;display:flex;align-items:center;gap:5px;">'
+        +'<span style="width:8px;height:8px;border-radius:50%;background:'+(r.color||'#5dd9d3')+';display:inline-block;"></span>'+r.name+'</div>';
+      if(r.postes.length)html+='<div style="font-size:10px;color:#555;margin-top:2px;">'+r.postes.join(', ')+'</div>';
+      html+='<div style="font-size:14px;font-weight:700;margin-top:4px;color:'+(r.color||'#333')+';">'+r.totalHours.toFixed(1)+'h</div></div>';
+    });
+    html+='</div></div>';
+  }
+  html+='</body></html>';
+
+  // Meme principe que exportRecapPDF
+  var win=window.open('','_blank');
+  win.document.write(html);
+  win.document.close();
+  setTimeout(function(){win.print();},500);
+}
 
 </script>
 
