@@ -947,6 +947,7 @@ function renderEcheancesResume(){
   var t=today();
   var t31=addDays(t,31);
   var items=[];
+  var newNoteItems=[];
 
   // Congés
   var conges=DATA.conges.filter(function(c){return c.start>=t&&c.start<=t31&&c.statut!=='Refusé';});
@@ -976,6 +977,31 @@ function renderEcheancesResume(){
   var notes=loadNotes().filter(function(n){return n.deadline&&n.deadline>=t&&n.deadline<=t31;});
   if(notes.length) items.push({label:'Note',count:notes.length,minDate:notes[0].deadline});
 
+  // Nouvelles notes depuis la dernière connexion (par d'autres utilisateurs)
+  var lastLogin=window._lastLogin;
+  var moi=window._fbCurrentUser||'';
+  if(lastLogin){
+    var nouvellesNotes=loadNotes().filter(function(n){
+      if(!n.createdAt) return false;
+      var auteur=(n.emetteur||'').toLowerCase();
+      var dest=(n.destinataire||'').toLowerCase();
+      var meLower=moi.toLowerCase();
+      // Note créée après la dernière connexion, par quelqu'un d'autre, pour moi ou pour tout le monde
+      return n.createdAt>lastLogin
+        && auteur!==meLower
+        && (dest===''||dest===meLower||dest.indexOf(meLower)>=0);
+    });
+    nouvellesNotes.forEach(function(n){
+      var auteur=n.emetteur||'quelqu'un';
+      var dest=n.destinataire?(' pour '+n.destinataire):'';
+      newNoteItems.push({
+        label:'💡 Nouvelle note de '+auteur+dest,
+        isNew:true,
+        minDate:n.createdAt||t
+      });
+    });
+  }
+
   // Trier par date
   items.sort(function(a,b){return a.minDate.localeCompare(b.minDate);});
 
@@ -992,14 +1018,23 @@ function renderEcheancesResume(){
     el.innerHTML='<p style="font-size:12px;color:var(--text2);">Aucune échéance dans les 31 prochains jours</p>';
     return;
   }
-  el.innerHTML=items.map(function(item){
+  // Nouvelles notes en haut si présentes
+  var newNotesHtml=newNoteItems.map(function(item){
+    return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);background:rgba(93,217,211,0.05);">'
+      +'<span style="font-size:14px;flex-shrink:0;">💡</span>'
+      +'<span style="font-size:12px;color:var(--accent);flex:1;font-weight:600;">'+item.label+'</span>'
+      +'</div>';
+  }).join('');
+
+  el.innerHTML=newNotesHtml+items.map(function(item){
     var c=uc(item.minDate);
     return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);">'
       +'<span style="width:8px;height:8px;border-radius:50%;background:'+c+';flex-shrink:0;"></span>'
       +'<span style="font-size:12px;color:var(--text);flex:1;">'+item.label+'</span>'
       +'<span style="font-size:12px;font-weight:700;color:'+c+';">'+item.count+'</span>'
       +'</div>';
-  }).join('');
+  }).join('')
+  ||'<p style="font-size:12px;color:var(--text2);">Aucune échéance dans les 31 prochains jours</p>';
 }
 
 function renderAlertesDash(){
@@ -1518,7 +1553,7 @@ document.getElementById('btn-save-note').addEventListener('click',function(){var
           notes[idx].emetteur=document.getElementById('pb-emetteur')?document.getElementById('pb-emetteur').value.trim():'';
           notes[idx].destinataire=document.getElementById('pb-destinataire')?document.getElementById('pb-destinataire').value.trim():'';}pbEditingId=null;this.textContent='+ Ajouter la note';}else{var emetteur=document.getElementById('pb-emetteur')?document.getElementById('pb-emetteur').value.trim():'';
         var destinataire=document.getElementById('pb-destinataire')?document.getElementById('pb-destinataire').value.trim():'';
-        notes.unshift({id:genId(),title,content,color:pbSelectedColor,date:today(),deadline:document.getElementById('pb-deadline').value,emetteur:emetteur,destinataire:destinataire});}saveNotes(notes);document.getElementById('pb-title').value='';document.getElementById('pb-content').value='';document.getElementById('pb-deadline').value='';
+        notes.unshift({id:genId(),title,content,color:pbSelectedColor,date:today(),createdAt:new Date().toISOString(),deadline:document.getElementById('pb-deadline').value,emetteur:emetteur,destinataire:destinataire});}saveNotes(notes);document.getElementById('pb-title').value='';document.getElementById('pb-content').value='';document.getElementById('pb-deadline').value='';
   if(document.getElementById('pb-emetteur')) document.getElementById('pb-emetteur').value='';
   if(document.getElementById('pb-destinataire')) document.getElementById('pb-destinataire').value='';renderPenseBete();showToast('Note sauvegardée ✓');});
 var _empSelectedSites=['site1'];
