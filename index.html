@@ -416,6 +416,17 @@ tr:last-child td{border-bottom:none;}
       </div>
 
       <div id="section-conges" class="section">
+        <!-- Cards congés N-1 et N -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+          <div class="card" style="margin:0;padding:16px;">
+            <div class="card-title" style="font-size:12px;margin-bottom:12px;" id="card-n1-title">Congés N-1</div>
+            <div id="conge-n1-list" style="display:flex;flex-direction:column;gap:6px;"></div>
+          </div>
+          <div class="card" style="margin:0;padding:16px;">
+            <div class="card-title" style="font-size:12px;margin-bottom:12px;" id="card-n-title">Congés N</div>
+            <div id="conge-n-list" style="display:flex;flex-direction:column;gap:6px;"></div>
+          </div>
+        </div>
         <div class="card" style="margin-bottom:20px;">
           <div class="card-title">Vue annuelle</div>
           <div class="timeline-wrap" id="conge-timeline"></div>
@@ -1318,7 +1329,41 @@ function setCongesSort(sort,btn){
   renderCongesTable();
 }
 
+function renderCongesNCards(){
+  var yr=new Date().getFullYear();
+  var t1=document.getElementById('card-n1-title');
+  var t2=document.getElementById('card-n-title');
+  if(t1) t1.textContent='Conges N-1 - a prendre avant juin '+yr;
+  if(t2) t2.textContent='Conges N - a prendre avant juin '+(yr+1);
+  function fj(v){return(parseFloat(v)||0).toFixed(1).replace('.',',');}
+  function makeRow(e, solde, color){
+    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 8px;background:var(--surface2);border-radius:7px;border:1px solid var(--border);margin-bottom:4px;">'
+      +'<div><div style="font-size:12px;font-weight:600;">'+e.prenom+' '+e.nom+'</div>'
+      +'<div style="font-size:10px;color:var(--text2);">'+e.site+'</div></div>'
+      +'<span style="font-size:14px;font-weight:700;color:'+color+';">'+fj(solde)+'j</span>'
+      +'</div>';
+  }
+  var listN1=document.getElementById('conge-n1-list');
+  var listN=document.getElementById('conge-n-list');
+  if(!DATA.empConges||!DATA.empConges.length){
+    if(listN1) listN1.innerHTML='<p style="font-size:12px;color:var(--text2);">Aucun employe</p>';
+    if(listN) listN.innerHTML='<p style="font-size:12px;color:var(--text2);">Aucun employe</p>';
+    return;
+  }
+  var sortedN1=DATA.empConges.slice().sort(function(a,b){return (parseFloat(b.soldeN)||0)-(parseFloat(a.soldeN)||0);});
+  var sortedN=DATA.empConges.slice().sort(function(a,b){return (parseFloat(b.soldeN1)||0)-(parseFloat(a.soldeN1)||0);});
+  if(listN1) listN1.innerHTML=sortedN1.map(function(e){
+    var s=parseFloat(e.soldeN)||0;
+    return makeRow(e,s,s>0?'#ffb950':s<0?'#ff8f8f':'var(--text2)');
+  }).join('');
+  if(listN) listN.innerHTML=sortedN.map(function(e){
+    var s=parseFloat(e.soldeN1)||0;
+    return makeRow(e,s,s>0?'#6ddc82':s<0?'#ff8f8f':'var(--text2)');
+  }).join('');
+}
+
 function renderConges(){
+  renderCongesNCards();
   renderEmpCongeList();
   var fs=document.getElementById('conge-filter-site');
   var fsHtml='<option value="">Tous les sites</option>';
