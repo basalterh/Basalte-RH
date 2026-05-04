@@ -417,15 +417,25 @@ tr:last-child td{border-bottom:none;}
 
       <div id="section-conges" class="section">
         <!-- Cards congés N-1 et N -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
-          <div class="card" style="margin:0;padding:10px 12px;">
-            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--accent);margin-bottom:8px;" id="card-n1-title">Congés N-1</div>
-            <div id="conge-n1-list"></div>
+        <div class="card" style="padding:10px 14px;margin-bottom:12px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+            <div style="font-size:12px;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:0.5px;">Suivi des congés</div>
+            <!-- En-têtes colonnes -->
+            <div style="display:grid;grid-template-columns:120px 120px;gap:0;">
+              <div style="display:grid;grid-template-columns:1fr 1fr;background:rgba(255,185,80,0.1);border:1px solid rgba(255,185,80,0.3);border-radius:6px;padding:3px 6px;text-align:center;margin-right:4px;">
+                <span style="font-size:9px;font-weight:700;color:#ffb950;text-transform:uppercase;letter-spacing:0.3px;grid-column:1/-1;margin-bottom:2px;" id="card-n1-title">N-1</span>
+                <span style="font-size:8px;color:var(--text2);text-align:center;">Posés</span>
+                <span style="font-size:8px;color:var(--text2);text-align:center;">Restants</span>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;background:rgba(109,220,130,0.1);border:1px solid rgba(109,220,130,0.3);border-radius:6px;padding:3px 6px;text-align:center;">
+                <span style="font-size:9px;font-weight:700;color:#6ddc82;text-transform:uppercase;letter-spacing:0.3px;grid-column:1/-1;margin-bottom:2px;" id="card-n-title">N</span>
+                <span style="font-size:8px;color:var(--text2);text-align:center;">Posés</span>
+                <span style="font-size:8px;color:var(--text2);text-align:center;">Restants</span>
+              </div>
+            </div>
           </div>
-          <div class="card" style="margin:0;padding:10px 12px;">
-            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--accent);margin-bottom:8px;" id="card-n-title">Congés N</div>
-            <div id="conge-n-list"></div>
-          </div>
+          <div id="conge-n1-list"></div>
+          <div id="conge-n-list" style="display:none;"></div>
         </div>
         <div class="card" style="margin-bottom:20px;">
           <div class="card-title">Vue annuelle</div>
@@ -1332,67 +1342,59 @@ function setCongesSort(sort,btn){
 
 function renderCongesNCards(){
   var yr=new Date().getFullYear();
-  var t=today();
   var t1=document.getElementById('card-n1-title');
   var t2=document.getElementById('card-n-title');
-  if(t1) t1.innerHTML='Conges N-1 &mdash; a prendre avant juin '+yr
-    +'<span style="display:grid;grid-template-columns:1fr 80px 80px;gap:4px;font-size:9px;color:var(--text2);font-weight:400;margin-top:6px;padding:0 8px;text-transform:uppercase;letter-spacing:0.3px;"><span></span><span style="text-align:right;">Jours poses</span><span style="text-align:right;">Jours restants</span></span>';
-  if(t2) t2.innerHTML='Conges N &mdash; a prendre avant juin '+(yr+1)
-    +'<span style="display:grid;grid-template-columns:1fr 80px 80px;gap:4px;font-size:9px;color:var(--text2);font-weight:400;margin-top:6px;padding:0 8px;text-transform:uppercase;letter-spacing:0.3px;"><span></span><span style="text-align:right;">Jours poses</span><span style="text-align:right;">Jours restants</span></span>';
+  if(t1) t1.textContent='N-1 — avant juin '+yr;
+  if(t2) t2.textContent='N — avant juin '+(yr+1);
 
-  function fj(v){return(parseFloat(v)||0).toFixed(1).replace('.',',');}
+  function fj(v){var n=parseFloat(v)||0;return(n>=0?'':'')+n.toFixed(1).replace('.',',');}
 
-  // Calculer jours posés/validés par employé
-  // On cherche l'empId dans DATA.employes par nom+prénom
   function getJoursPoses(e){
     var total=0;
     DATA.conges.forEach(function(c){
       if(c.statut==='Approuvé'||c.statut==='En attente'){
         var emp=getEmp(c.empId);
-        if(emp&&emp.nom===e.nom&&emp.prenom===e.prenom){
-          total+=daysBetween(c.start,c.end);
-        }
+        if(emp&&emp.nom===e.nom&&emp.prenom===e.prenom) total+=daysBetween(c.start,c.end);
       }
     });
     return total;
   }
 
-  function makeRow(e, jPoses, soldeN1, soldeN, isN1){
-    // Calcul : jours posés décomptés d'abord sur N-1, puis sur N
-    var soldeN1f=parseFloat(soldeN1)||0;
-    var soldeNf=parseFloat(soldeN)||0;
-    var posesN1=Math.min(jPoses,Math.max(0,soldeN1f)); // prélevés sur N-1
-    var posesN=Math.max(0,jPoses-posesN1);              // restant prélevé sur N
-    var restN1=soldeN1f-posesN1;
-    var restN=soldeNf-posesN;
-    var poses=isN1?posesN1:posesN;
-    var restant=isN1?restN1:restN;
-    var colorRest=restant>0?(isN1?'#ffb950':'#6ddc82'):restant<0?'#ff8f8f':'var(--text2)';
-    var colorPoses=poses>0?'var(--text)':'var(--text2)';
-    return '<div style="display:grid;grid-template-columns:1fr 80px 80px;gap:4px;align-items:center;padding:3px 8px;border-bottom:1px solid var(--border);">'
-      +'<span style="font-size:11px;color:var(--text);">'+e.prenom+' '+e.nom+' <span style="color:var(--text2);font-size:10px;">'+e.site+'</span></span>'
-      +'<span style="font-size:11px;font-weight:600;color:'+colorPoses+';text-align:right;">'+fj(poses)+'j</span>'
-      +'<span style="font-size:11px;font-weight:700;color:'+colorRest+';text-align:right;">'+fj(restant)+'j</span>'
-      +'</div>';
-  }
-
   var listN1=document.getElementById('conge-n1-list');
-  var listN=document.getElementById('conge-n-list');
+  if(!listN1) return;
+
   if(!DATA.empConges||!DATA.empConges.length){
-    if(listN1) listN1.innerHTML='<p style="font-size:12px;color:var(--text2);padding:8px;">Aucun employe</p>';
-    if(listN) listN.innerHTML='<p style="font-size:12px;color:var(--text2);padding:8px;">Aucun employe</p>';
+    listN1.innerHTML='<p style="font-size:12px;color:var(--text2);padding:8px;">Aucun employe</p>';
     return;
   }
+
   var sorted=DATA.empConges.slice().sort(function(a,b){
     return (a.nom+a.prenom).localeCompare(b.nom+b.prenom);
   });
-  if(listN1) listN1.innerHTML=sorted.map(function(e){
+
+  listN1.innerHTML=sorted.map(function(e){
     var jP=getJoursPoses(e);
-    return makeRow(e,jP,e.soldeN,e.soldeN1,true);
-  }).join('');
-  if(listN) listN.innerHTML=sorted.map(function(e){
-    var jP=getJoursPoses(e);
-    return makeRow(e,jP,e.soldeN,e.soldeN1,false);
+    var sN1=parseFloat(e.soldeN)||0;
+    var sN=parseFloat(e.soldeN1)||0;
+    var posN1=Math.min(jP,Math.max(0,sN1));
+    var posN=Math.max(0,jP-posN1);
+    var restN1=sN1-posN1;
+    var restN=sN-posN;
+    var crN1=restN1>0?'#ffb950':restN1<0?'#ff8f8f':'var(--text2)';
+    var crN=restN>0?'#6ddc82':restN<0?'#ff8f8f':'var(--text2)';
+    var cpN1=posN1>0?'var(--text)':'var(--text2)';
+    var cpN=posN>0?'var(--text)':'var(--text2)';
+    return '<div style="display:grid;grid-template-columns:1fr 30px 30px 4px 30px 30px;align-items:center;padding:3px 0;border-bottom:1px solid var(--border);">'
+      +'<span style="font-size:11px;color:var(--text);padding-left:2px;">'+e.prenom+' '+e.nom+' <span style="color:var(--text2);font-size:9px;">'+e.site+'</span></span>'
+      // N-1
+      +'<span style="font-size:10px;font-weight:600;color:'+cpN1+';text-align:right;">'+fj(posN1)+'</span>'
+      +'<span style="font-size:10px;font-weight:700;color:'+crN1+';text-align:right;">'+fj(restN1)+'</span>'
+      // Séparateur
+      +'<span style="display:inline-block;width:1px;height:14px;background:var(--border);margin:0 2px;"></span>'
+      // N
+      +'<span style="font-size:10px;font-weight:600;color:'+cpN+';text-align:right;">'+fj(posN)+'</span>'
+      +'<span style="font-size:10px;font-weight:700;color:'+crN+';text-align:right;">'+fj(restN)+'</span>'
+      +'</div>';
   }).join('');
 }
 
