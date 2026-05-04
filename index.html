@@ -1757,22 +1757,40 @@ function updateCreditStatus(){
   } else {
     el.innerHTML='<span style="color:#ffb950;font-size:11px;">⚠ '+mois+' non credite</span>';
   }
-  // Alertes employés entrés en cours de mois
+  // Alertes entrée en cours de mois
   var alerts=[];
+  // Alertes solde à zéro (solde N-1 et N tous les deux à 0)
+  var alertsZero=[];
   DATA.empConges.forEach(function(e){
     var emp=DATA.employes.find(function(em){return em.nom===e.nom&&em.prenom===e.prenom;});
-    if(!emp||!emp.entree)return;
-    var entreeD=new Date(emp.entree+'T00:00:00');
-    var entreeY=entreeD.getFullYear(),entreeM=entreeD.getMonth()+1;
-    var curY=d.getFullYear(),curM=d.getMonth()+1;
-    // Si l'entrée est ce mois-ci et pas le 1er
-    if(entreeY===curY&&entreeM===curM&&entreeD.getDate()>1){
-      alerts.push('<span style="color:#ffb950;font-size:11px;">⚠ '+e.prenom+' '+e.nom+' — entré le '+fmt(emp.entree)+' : pas de credit ce mois-ci</span>');
+    // Alerte entrée en cours de mois
+    if(emp&&emp.entree){
+      var entreeD=new Date(emp.entree+'T00:00:00');
+      var entreeY=entreeD.getFullYear(),entreeM=entreeD.getMonth()+1;
+      var curY=d.getFullYear(),curM=d.getMonth()+1;
+      if(entreeY===curY&&entreeM===curM&&entreeD.getDate()>1){
+        alerts.push('<div style="display:flex;align-items:center;gap:6px;padding:4px 8px;background:rgba(255,185,80,0.08);border:1px solid rgba(255,185,80,0.3);border-radius:6px;">'
+          +'<span style="font-size:13px;">⚠</span>'
+          +'<span style="color:#ffb950;font-size:11px;">'+e.prenom+' '+e.nom+' — entré le '+fmt(emp.entree)+' : pas de crédit ce mois-ci</span>'
+          +'</div>');
+      }
+    }
+    // Alerte solde à zéro
+    var sN1=parseFloat(e.soldeN)||0;
+    var sN=parseFloat(e.soldeN1)||0;
+    var acquisN1=parseFloat(e.acquisN)||0;
+    var acquisN=parseFloat(e.acquisN1)||0;
+    if(sN1===0&&sN===0&&acquisN1===0&&acquisN===0){
+      alertsZero.push('<div style="display:flex;align-items:center;gap:6px;padding:4px 8px;background:rgba(255,143,143,0.08);border:1px solid rgba(255,143,143,0.3);border-radius:6px;">'
+        +'<span style="font-size:13px;">🔴</span>'
+        +'<span style="color:#ff8f8f;font-size:11px;">'+e.prenom+' '+e.nom+' — solde à 0 : vérifier si le mois d'entrée a bien été renseigné</span>'
+        +'</div>');
     }
   });
+  var allAlerts=alerts.concat(alertsZero);
   var alertEl=document.getElementById('credit-alerts');
-  if(alertEl) alertEl.innerHTML=alerts.length
-    ?'<div style="display:flex;flex-direction:column;gap:3px;margin-bottom:6px;">'+alerts.join('')+'</div>'
+  if(alertEl) alertEl.innerHTML=allAlerts.length
+    ?'<div style="display:flex;flex-direction:column;gap:4px;margin-bottom:8px;">'+allAlerts.join('')+'</div>'
     :'';
 }
 
