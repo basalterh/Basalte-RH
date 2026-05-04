@@ -456,11 +456,18 @@ tr:last-child td{border-bottom:none;}
             <tbody id="conges-tbody"></tbody></table>
           </div>
         </div>
-        <div class="card" style="margin-top:20px;">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-            <div class="card-title" style="margin:0;">Employés et congés</div>
-            <div style="display:flex;gap:6px;align-items:center;"><label style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;cursor:pointer;font-size:11px;color:var(--accent);" title="Importer soldes depuis PDF">📄 PDF<input type="file" id="conge-pdf-input" accept=".pdf" style="display:none;"></label><button id="btn-add-empconge" style="width:28px;height:28px;border-radius:50%;background:var(--accent);color:#0a0e14;border:none;font-size:18px;cursor:pointer;font-weight:700;">+</button></div>
+        <div class="card" style="margin-top:12px;padding:12px 14px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:8px;">
+            <div class="card-title" style="margin:0;font-size:12px;">Employés et congés</div>
+            <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+              <div id="credit-status" style="font-size:11px;color:var(--text2);"></div>
+              <button onclick="crediterMois()" id="btn-crediter" style="padding:4px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;cursor:pointer;font-size:11px;color:var(--accent);font-family:inherit;">💳 Créditer le mois</button>
+              <label style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;cursor:pointer;font-size:11px;color:var(--accent);" title="Importer soldes depuis PDF">📄 PDF<input type="file" id="conge-pdf-input" accept=".pdf" style="display:none;"></label>
+              <button id="btn-add-empconge" style="width:26px;height:26px;border-radius:50%;background:var(--accent);color:#0a0e14;border:none;font-size:16px;cursor:pointer;font-weight:700;">+</button>
+            </div>
           </div>
+          <!-- Alertes entrées en cours de mois -->
+          <div id="credit-alerts" style="margin-bottom:8px;"></div>
           <div id="emp-conge-list"></div>
         </div>
       </div>
@@ -1398,6 +1405,7 @@ function renderCongesNCards(){
 function renderConges(){
   renderCongesNCards();
   renderEmpCongeList();
+  updateCreditStatus();
   var fs=document.getElementById('conge-filter-site');
   var fsHtml='<option value="">Tous les sites</option>';
   Object.entries(DATA.sites).forEach(function(entry){fsHtml+='<option value="'+entry[0]+'">'+entry[1].name+'</option>';});
@@ -1669,6 +1677,86 @@ function setEcSort(sort,btn){
   if(btn){btn.style.border='1px solid var(--accent)';btn.style.background='rgba(93,217,211,0.1)';btn.style.color='var(--accent)';}
   renderEmpCongeList();
 }
+function getCreditKey(){
+  var d=new Date();
+  return 'credit_'+d.getFullYear()+'_'+(d.getMonth()+1);
+}
+
+function updateCreditStatus(){
+  var key=getCreditKey();
+  var d=new Date();
+  var moisNom=['Janvier','Fevrier','Mars','Avril','Mai','Juin','Juillet','Aout','Septembre','Octobre','Novembre','Decembre'];
+  var mois=moisNom[d.getMonth()]+' '+d.getFullYear();
+  var done=DATA[key];
+  var el=document.getElementById('credit-status');
+  if(!el)return;
+  if(done){
+    el.innerHTML='<span style="color:#6ddc82;font-size:11px;">✓ '+mois+' credite le '+fmt(done)+'</span>';
+  } else {
+    el.innerHTML='<span style="color:#ffb950;font-size:11px;">⚠ '+mois+' non credite</span>';
+  }
+  // Alertes employés entrés en cours de mois
+  var alerts=[];
+  DATA.empConges.forEach(function(e){
+    var emp=DATA.employes.find(function(em){return em.nom===e.nom&&em.prenom===e.prenom;});
+    if(!emp||!emp.entree)return;
+    var entreeD=new Date(emp.entree+'T00:00:00');
+    var entreeY=entreeD.getFullYear(),entreeM=entreeD.getMonth()+1;
+    var curY=d.getFullYear(),curM=d.getMonth()+1;
+    // Si l'entrée est ce mois-ci et pas le 1er
+    if(entreeY===curY&&entreeM===curM&&entreeD.getDate()>1){
+      alerts.push('<span style="color:#ffb950;font-size:11px;">⚠ '+e.prenom+' '+e.nom+' — entré le '+fmt(emp.entree)+' : pas de credit ce mois-ci</span>');
+    }
+  });
+  var alertEl=document.getElementById('credit-alerts');
+  if(alertEl) alertEl.innerHTML=alerts.length
+    ?'<div style="display:flex;flex-direction:column;gap:3px;margin-bottom:6px;">'+alerts.join('')+'</div>'
+    :'';
+}
+
+function crediterMois(){
+  var key=getCreditKey();
+  if(DATA[key]){
+    showToast('Ce mois a deja ete credite le '+fmt(DATA[key]));
+    return;
+  }
+  var d=new Date();
+  var curY=d.getFullYear(),curM=d.getMonth()+1;
+  var credited=0,skipped=[];
+  DATA.empConges.forEach(function(e){
+    // Vérifier si l'employé était actif ce mois-ci
+    var emp=DATA.employes.find(function(em){return em.nom===e.nom&&em.prenom===e.prenom;});
+    var skip=false;
+    if(emp&&emp.entree){
+      var entreeD=new Date(emp.entree+'T00:00:00');
+      var entreeY=entreeD.getFullYear(),entreeM=entreeD.getMonth()+1;
+      // Entré en cours de mois (pas le 1er) : pas de crédit
+      if(entreeY===curY&&entreeM===curM&&entreeD.getDate()>1) skip=true;
+      // Pas encore entré
+      if(entreeY>curY||(entreeY===curY&&entreeM>curM)) skip=true;
+    }
+    if(emp&&emp.sortie){
+      var sortieD=new Date(emp.sortie+'T00:00:00');
+      var sortieY=sortieD.getFullYear(),sortieM=sortieD.getMonth()+1;
+      // Déjà sorti avant ce mois
+      if(sortieY<curY||(sortieY===curY&&sortieM<curM)) skip=true;
+    }
+    if(skip){skipped.push(e.prenom+' '+e.nom);return;}
+    // Créditer 2,5j sur soldeN1 (congés en cours d'acquisition)
+    e.acquisN1=(parseFloat(e.acquisN1)||0)+2.5;
+    e.soldeN1=(parseFloat(e.soldeN1)||0)+2.5;
+    credited++;
+  });
+  DATA[key]=today();
+  saveData();
+  renderEmpCongeList();
+  renderCongesNCards();
+  updateCreditStatus();
+  var msg='✓ '+credited+' employe(s) credite(s) de 2,5j';
+  if(skipped.length) msg+=' | Non credites : '+skipped.join(', ');
+  showToast(msg,4000);
+}
+
 function renderEmpCongeList(){var wrap=document.getElementById('emp-conge-list');if(!wrap)return;if(!DATA.empConges||!DATA.empConges.length){wrap.innerHTML='<p style="color:var(--text2);font-size:13px;padding:12px 0;">Aucun employé. Cliquez sur + pour ajouter.</p>';return;}
   var sorted=DATA.empConges.slice().sort(function(a,b){
     if(_ecSort==='nom') return (a.nom+a.prenom).localeCompare(b.nom+b.prenom);
@@ -1677,16 +1765,15 @@ function renderEmpCongeList(){var wrap=document.getElementById('emp-conge-list')
     return 0;
   });
   var html='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px;">';
-  sorted.forEach(function(e){function fj(v){return(parseFloat(v)||0).toFixed(2).replace('.',',');}var sc='var(--accent)';var soldColor=((parseFloat(e.soldeN)||0)+(parseFloat(e.soldeN1)||0))>=0?'var(--accent)':'#ff8f8f';html+='<div style="border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--surface2);">'
-      +'<div data-ec-toggle="'+e.id+'" style="display:flex;align-items:center;gap:8px;padding:8px 10px;cursor:pointer;">'
-      +'<div style="width:3px;height:28px;border-radius:2px;background:'+sc+';flex-shrink:0;"></div>'
-      +'<div style="flex:1;min-width:0;">'
-      +'<div style="font-weight:700;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+e.prenom+' '+e.nom+'</div>'
-      +'<div style="display:flex;gap:4px;margin-top:2px;align-items:center;">'
-      +'<span style="background:var(--accent)22;color:var(--accent);border:1px solid var(--accent)44;border-radius:4px;padding:0px 5px;font-size:10px;font-weight:600;">'+e.site+'</span>'
-      +'<span style="color:'+soldColor+';font-size:10px;font-weight:600;">'+fj((parseFloat(e.soldeN)||0)+(parseFloat(e.soldeN1)||0))+'j</span>'
-      +'<span style="color:var(--text2);font-size:10px;">· an: '+fj(e.soldeN)+'j</span>'
-      +'</div></div>'
+  sorted.forEach(function(e){function fj(v){return(parseFloat(v)||0).toFixed(2).replace('.',',');}var sc='var(--accent)';var soldColor=((parseFloat(e.soldeN)||0)+(parseFloat(e.soldeN1)||0))>=0?'var(--accent)':'#ff8f8f';html+='<div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--surface2);">'
+      +'<div data-ec-toggle="'+e.id+'" style="display:flex;align-items:center;gap:6px;padding:5px 8px;cursor:pointer;">'
+      +'<div style="width:3px;height:22px;border-radius:2px;background:'+sc+';flex-shrink:0;"></div>'
+      +'<div style="flex:1;min-width:0;display:flex;align-items:center;gap:6px;">'
+      +'<span style="font-weight:700;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+e.prenom+' '+e.nom+'</span>'
+      +'<span style="background:var(--accent)22;color:var(--accent);border:1px solid var(--accent)44;border-radius:4px;padding:0 4px;font-size:9px;font-weight:600;">'+e.site+'</span>'
+      +'<span style="color:'+soldColor+';font-size:10px;font-weight:700;">'+fj((parseFloat(e.soldeN)||0)+(parseFloat(e.soldeN1)||0))+'j</span>'
+      +'<span style="color:var(--text2);font-size:10px;">· N: '+fj(e.soldeN)+'j</span>'
+      +'</div>'
       +'<div style="display:flex;align-items:center;gap:4px;">'
       +'<button class="btn btn-icon" style="width:22px;height:22px;padding:0;font-size:11px;" data-ec-edit="'+e.id+'">✎</button>'
       +'<button class="btn btn-icon btn-danger" style="width:22px;height:22px;padding:0;font-size:11px;" data-ec-del="'+e.id+'">✕</button>'
