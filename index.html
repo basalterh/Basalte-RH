@@ -419,8 +419,16 @@ tr:last-child td{border-bottom:none;}
         <!-- Cards congés N-1 et N -->
         <div class="card" style="padding:12px 16px;margin-bottom:12px;">
           <!-- En-tête grille -->
-          <div style="display:grid;grid-template-columns:1fr 56px 56px 8px 56px 56px;align-items:center;margin-bottom:8px;padding-bottom:8px;border-bottom:2px solid var(--border);">
-            <div style="font-size:13px;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:0.5px;">Suivi des congés</div>
+          <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;flex-wrap:wrap;">
+            <span style="font-size:12px;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:0.5px;">Suivi des congés</span>
+            <select id="suivi-filter-site" class="form-select" style="width:auto;padding:3px 8px;font-size:11px;" onchange="renderCongesNCards()"><option value="">Tous sites</option></select>
+            <select id="suivi-filter-contrat" class="form-select" style="width:auto;padding:3px 8px;font-size:11px;" onchange="renderCongesNCards()"><option value="">Tous contrats</option><option>CDI</option><option>CDD</option></select>
+            <button class="conge-sort-btn active" id="suivi-sort-nom" onclick="setSuiviSort('nom',this)" style="padding:2px 8px;border-radius:6px;border:1px solid var(--accent);background:rgba(93,217,211,0.1);color:var(--accent);font-size:10px;cursor:pointer;">Nom</button>
+            <button class="conge-sort-btn" id="suivi-sort-restN1" onclick="setSuiviSort('restN1',this)" style="padding:2px 8px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:10px;cursor:pointer;">Restants N-1</button>
+            <button class="conge-sort-btn" id="suivi-sort-restN" onclick="setSuiviSort('restN',this)" style="padding:2px 8px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:10px;cursor:pointer;">Restants N</button>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 56px 56px 8px 56px 56px;align-items:center;margin-bottom:6px;padding-bottom:6px;border-bottom:2px solid var(--border);">
+            <div></div>
             <div style="grid-column:2/4;display:grid;grid-template-columns:1fr 1fr;background:rgba(255,185,80,0.1);border:1px solid rgba(255,185,80,0.35);border-radius:6px;padding:3px 0;margin-right:4px;">
               <span id="card-n1-title" style="font-size:9px;font-weight:700;color:#ffb950;text-align:center;grid-column:1/-1;margin-bottom:2px;">N-1</span>
               <span style="font-size:9px;color:var(--text2);text-align:center;">Posés</span>
@@ -463,10 +471,13 @@ tr:last-child td{border-bottom:none;}
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:8px;">
             <div class="card-title" style="margin:0;font-size:12px;">Employés et congés</div>
             <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+              <select id="ec-filter-site" class="form-select" style="width:auto;padding:3px 8px;font-size:11px;" onchange="renderEmpCongeList()"><option value="">Tous sites</option></select>
+              <select id="ec-filter-contrat" class="form-select" style="width:auto;padding:3px 8px;font-size:11px;" onchange="renderEmpCongeList()"><option value="">Tous contrats</option><option>CDI</option><option>CDD</option></select>
+              <div style="width:1px;height:16px;background:var(--border);"></div>
               <div id="credit-status" style="font-size:11px;color:var(--text2);"></div>
-              <button onclick="crediterMois()" id="btn-crediter" style="padding:4px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;cursor:pointer;font-size:11px;color:var(--accent);font-family:inherit;">💳 Créditer le mois</button>
-              <label style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;cursor:pointer;font-size:11px;color:var(--accent);" title="Importer soldes depuis PDF">📄 PDF<input type="file" id="conge-pdf-input" accept=".pdf" style="display:none;"></label>
-              <button id="btn-add-empconge" style="width:26px;height:26px;border-radius:50%;background:var(--accent);color:#0a0e14;border:none;font-size:16px;cursor:pointer;font-weight:700;">+</button>
+              <button onclick="crediterMois()" id="btn-crediter" style="padding:3px 9px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;cursor:pointer;font-size:11px;color:var(--accent);font-family:inherit;">💳 Créditer le mois</button>
+              <label style="display:inline-flex;align-items:center;gap:5px;padding:3px 9px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;cursor:pointer;font-size:11px;color:var(--accent);" title="Importer soldes depuis PDF">📄 PDF<input type="file" id="conge-pdf-input" accept=".pdf" style="display:none;"></label>
+              <button id="btn-add-empconge" style="width:24px;height:24px;border-radius:50%;background:var(--accent);color:#0a0e14;border:none;font-size:14px;cursor:pointer;font-weight:700;">+</button>
             </div>
           </div>
           <!-- Alertes entrées en cours de mois -->
@@ -1339,6 +1350,15 @@ function setCongesSort(sort,btn){
   renderCongesTable();
 }
 
+var _suiviSort='nom';
+function setSuiviSort(sort,btn){
+  _suiviSort=sort;
+  document.querySelectorAll('[id^="suivi-sort-"]').forEach(function(b){
+    b.style.border='1px solid var(--border)';b.style.background='transparent';b.style.color='var(--text2)';
+  });
+  if(btn){btn.style.border='1px solid var(--accent)';btn.style.background='rgba(93,217,211,0.1)';btn.style.color='var(--accent)';}
+  renderCongesNCards();
+}
 function renderCongesNCards(){
   var yr=new Date().getFullYear();
   var t1=document.getElementById('card-n1-title');
@@ -1367,7 +1387,24 @@ function renderCongesNCards(){
     return;
   }
 
-  var sorted=DATA.empConges.slice().sort(function(a,b){
+  var suiviSite=document.getElementById('suivi-filter-site')&&document.getElementById('suivi-filter-site').value||'';
+  var suiviContrat=document.getElementById('suivi-filter-contrat')&&document.getElementById('suivi-filter-contrat').value||'';
+  var sorted=DATA.empConges.slice().filter(function(e){
+    if(suiviSite&&e.site!==suiviSite)return false;
+    if(suiviContrat&&e.contrat!==suiviContrat)return false;
+    return true;
+  }).sort(function(a,b){
+    if(_suiviSort==='nom') return (a.nom+a.prenom).localeCompare(b.nom+b.prenom);
+    var jPA=DATA.conges.filter(function(c){var em=getEmp(c.empId);return em&&em.nom===a.nom&&em.prenom===a.prenom&&(c.statut==='Approuvé'||c.statut==='En attente');}).reduce(function(s,c){return s+daysBetween(c.start,c.end);},0);
+    var jPB=DATA.conges.filter(function(c){var em=getEmp(c.empId);return em&&em.nom===b.nom&&em.prenom===b.prenom&&(c.statut==='Approuvé'||c.statut==='En attente');}).reduce(function(s,c){return s+daysBetween(c.start,c.end);},0);
+    var sN1a=parseFloat(a.soldeN)||0,sNa=parseFloat(a.soldeN1)||0;
+    var sN1b=parseFloat(b.soldeN)||0,sNb=parseFloat(b.soldeN1)||0;
+    var restN1a=sN1a-Math.min(jPA,Math.max(0,sN1a));
+    var restN1b=sN1b-Math.min(jPB,Math.max(0,sN1b));
+    var restNa=sNa-Math.max(0,jPA-Math.min(jPA,Math.max(0,sN1a)));
+    var restNb=sNb-Math.max(0,jPB-Math.min(jPB,Math.max(0,sN1b)));
+    if(_suiviSort==='restN1') return restN1b-restN1a;
+    if(_suiviSort==='restN') return restNb-restNa;
     return (a.nom+a.prenom).localeCompare(b.nom+b.prenom);
   });
 
@@ -1394,7 +1431,35 @@ function renderCongesNCards(){
   }).join('');
 }
 
+function syncEmpConges(){
+  // Ajouter les employes manquants dans empConges
+  if(!DATA.empConges) DATA.empConges=[];
+  var actifs=getActiveEmployes();
+  actifs.forEach(function(emp){
+    var exists=DATA.empConges.find(function(e){
+      return e.nom===emp.nom&&e.prenom===emp.prenom;
+    });
+    if(!exists){
+      DATA.empConges.push({
+        id:genId(),
+        nom:emp.nom,
+        prenom:emp.prenom,
+        site:emp.site||'',
+        contrat:emp.contrat||'CDI',
+        acquisN:0,prisN:0,soldeN:0,
+        acquisN1:0,prisN1:0,soldeN1:0
+      });
+    }
+  });
+  // Mettre à jour le site et contrat si changé dans employes
+  DATA.empConges.forEach(function(e){
+    var emp=DATA.employes.find(function(em){return em.nom===e.nom&&em.prenom===e.prenom;});
+    if(emp){e.site=emp.site||e.site;e.contrat=emp.contrat||e.contrat;}
+  });
+}
+
 function renderConges(){
+  syncEmpConges();
   renderCongesNCards();
   renderEmpCongeList();
   updateCreditStatus();
@@ -1402,6 +1467,11 @@ function renderConges(){
   var fsHtml='<option value="">Tous les sites</option>';
   Object.entries(DATA.sites).forEach(function(entry){fsHtml+='<option value="'+entry[0]+'">'+entry[1].name+'</option>';});
   fs.innerHTML=fsHtml;
+  // Peupler aussi les filtres ec et suivi
+  ['ec-filter-site','suivi-filter-site'].forEach(function(id){
+    var el=document.getElementById(id);
+    if(el) el.innerHTML=fsHtml;
+  });
   renderCongeTimeline();
   renderCongesTable();
 }
@@ -1750,7 +1820,13 @@ function crediterMois(){
 }
 
 function renderEmpCongeList(){var wrap=document.getElementById('emp-conge-list');if(!wrap)return;if(!DATA.empConges||!DATA.empConges.length){wrap.innerHTML='<p style="color:var(--text2);font-size:13px;padding:12px 0;">Aucun employé. Cliquez sur + pour ajouter.</p>';return;}
-  var sorted=DATA.empConges.slice().sort(function(a,b){
+  var ecSite=document.getElementById('ec-filter-site')&&document.getElementById('ec-filter-site').value||'';
+  var ecContrat=document.getElementById('ec-filter-contrat')&&document.getElementById('ec-filter-contrat').value||'';
+  var sorted=DATA.empConges.slice().filter(function(e){
+    if(ecSite&&e.site!==ecSite)return false;
+    if(ecContrat&&e.contrat!==ecContrat)return false;
+    return true;
+  }).sort(function(a,b){
     if(_ecSort==='nom') return (a.nom+a.prenom).localeCompare(b.nom+b.prenom);
     if(_ecSort==='solde') return ((parseFloat(b.soldeN)||0)+(parseFloat(b.soldeN1)||0))-((parseFloat(a.soldeN)||0)+(parseFloat(a.soldeN1)||0));
     if(_ecSort==='soldeN') return (parseFloat(b.soldeN)||0)-(parseFloat(a.soldeN)||0);
