@@ -431,28 +431,22 @@ tr:last-child td{border-bottom:none;}
           <div class="card-title">Vue annuelle</div>
           <div class="timeline-wrap" id="conge-timeline"></div>
         </div>
-        <div class="card">
-          <!-- En-tête avec titre + toggle passés/à venir -->
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
-            <div class="card-title" style="margin:0;">Congés posés</div>
-            <div style="display:flex;gap:6px;align-items:center;">
-              <button id="btn-conge-avenir" onclick="setCongesView('avenir')" style="padding:5px 12px;border-radius:20px;border:1px solid var(--accent);background:rgba(93,217,211,0.12);color:var(--accent);font-size:11px;font-weight:700;cursor:pointer;">📅 À venir</button>
-              <button id="btn-conge-passes" onclick="setCongesView('passes')" style="padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;">🕐 Passés</button>
-            </div>
+        <div class="card" style="padding:10px 14px;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+            <div class="card-title" style="margin:0;font-size:12px;">Congés posés</div>
+            <button id="btn-conge-avenir" onclick="setCongesView('avenir')" style="padding:3px 9px;border-radius:20px;border:1px solid var(--accent);background:rgba(93,217,211,0.12);color:var(--accent);font-size:10px;font-weight:700;cursor:pointer;">📅 À venir</button>
+            <button id="btn-conge-passes" onclick="setCongesView('passes')" style="padding:3px 9px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:10px;font-weight:600;cursor:pointer;">🕐 Passés</button>
+            <div style="width:1px;height:16px;background:var(--border);"></div>
+            <select id="conge-filter-site" class="form-select" style="width:auto;padding:3px 8px;font-size:11px;" onchange="renderCongesTable()"><option value="">Tous sites</option></select>
+            <select id="conge-filter-statut" class="form-select" style="width:auto;padding:3px 8px;font-size:11px;" onchange="renderCongesTable()"><option value="">Tous statuts</option><option>Approuvé</option><option>En attente</option><option>Refusé</option></select>
+            <div style="width:1px;height:16px;background:var(--border);"></div>
+            <button class="conge-sort-btn active" id="sort-debut" onclick="setCongesSort('debut',this)" style="padding:2px 8px;border-radius:6px;border:1px solid var(--accent);background:rgba(93,217,211,0.1);color:var(--accent);font-size:10px;cursor:pointer;">Date début</button>
+            <button class="conge-sort-btn" id="sort-ajout" onclick="setCongesSort('ajout',this)" style="padding:2px 8px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:10px;cursor:pointer;">Ajout</button>
+            <button class="conge-sort-btn" id="sort-employe" onclick="setCongesSort('employe',this)" style="padding:2px 8px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:10px;cursor:pointer;">Employé</button>
+            <button class="conge-sort-btn" id="sort-statut" onclick="setCongesSort('statut',this)" style="padding:2px 8px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:10px;cursor:pointer;">Statut</button>
           </div>
-          <!-- Filtres et tri -->
-          <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center;">
-            <select id="conge-filter-site" class="form-select" style="width:auto;padding:7px 10px;" onchange="renderCongesTable()"><option value="">Tous les sites</option></select>
-            <select id="conge-filter-statut" class="form-select" style="width:auto;padding:7px 10px;" onchange="renderCongesTable()"><option value="">Tous statuts</option><option>Approuvé</option><option>En attente</option><option>Refusé</option></select>
-            <div style="width:1px;height:20px;background:var(--border);"></div>
-            <span style="font-size:11px;color:var(--text2);">Trier par :</span>
-            <button class="conge-sort-btn active" id="sort-debut" onclick="setCongesSort('debut',this)" style="padding:4px 10px;border-radius:6px;border:1px solid var(--accent);background:rgba(93,217,211,0.1);color:var(--accent);font-size:11px;font-weight:600;cursor:pointer;">Date début</button>
-            <button class="conge-sort-btn" id="sort-ajout" onclick="setCongesSort('ajout',this)" style="padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;">Date d'ajout</button>
-            <button class="conge-sort-btn" id="sort-employe" onclick="setCongesSort('employe',this)" style="padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;">Employé</button>
-            <button class="conge-sort-btn" id="sort-statut" onclick="setCongesSort('statut',this)" style="padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:11px;font-weight:600;cursor:pointer;">Statut</button>
-          </div>
-          <div class="table-wrap">
-            <table><thead><tr><th>Employé</th><th>Site</th><th>Début</th><th>Fin</th><th>Durée</th><th>Type</th><th>Statut</th><th>Actions</th></tr></thead>
+          <div class="table-wrap" style="font-size:12px;">
+            <table style="font-size:12px;"><thead><tr><th style="padding:5px 8px;">Employé</th><th style="padding:5px 8px;">Site</th><th style="padding:5px 8px;">Début</th><th style="padding:5px 8px;">Fin</th><th style="padding:5px 8px;">Durée</th><th style="padding:5px 8px;">Type</th><th style="padding:5px 8px;">Statut</th><th style="padding:5px 8px;">Actions</th></tr></thead>
             <tbody id="conges-tbody"></tbody></table>
           </div>
         </div>
