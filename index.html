@@ -1331,33 +1331,67 @@ function setCongesSort(sort,btn){
 
 function renderCongesNCards(){
   var yr=new Date().getFullYear();
+  var t=today();
   var t1=document.getElementById('card-n1-title');
   var t2=document.getElementById('card-n-title');
-  if(t1) t1.textContent='Conges N-1 - a prendre avant juin '+yr;
-  if(t2) t2.textContent='Conges N - a prendre avant juin '+(yr+1);
+  if(t1) t1.innerHTML='Conges N-1 &mdash; a prendre avant juin '+yr
+    +'<span style="display:grid;grid-template-columns:1fr 80px 80px;gap:4px;font-size:9px;color:var(--text2);font-weight:400;margin-top:6px;padding:0 8px;text-transform:uppercase;letter-spacing:0.3px;"><span></span><span style="text-align:right;">Jours poses</span><span style="text-align:right;">Jours restants</span></span>';
+  if(t2) t2.innerHTML='Conges N &mdash; a prendre avant juin '+(yr+1)
+    +'<span style="display:grid;grid-template-columns:1fr 80px 80px;gap:4px;font-size:9px;color:var(--text2);font-weight:400;margin-top:6px;padding:0 8px;text-transform:uppercase;letter-spacing:0.3px;"><span></span><span style="text-align:right;">Jours poses</span><span style="text-align:right;">Jours restants</span></span>';
+
   function fj(v){return(parseFloat(v)||0).toFixed(1).replace('.',',');}
-  function makeRow(e, solde, color){
-    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:3px 8px;border-bottom:1px solid var(--border);">'
+
+  // Calculer jours posés/validés par employé
+  // On cherche l'empId dans DATA.employes par nom+prénom
+  function getJoursPoses(e){
+    var total=0;
+    DATA.conges.forEach(function(c){
+      if(c.statut==='Approuvé'||c.statut==='En attente'){
+        var emp=getEmp(c.empId);
+        if(emp&&emp.nom===e.nom&&emp.prenom===e.prenom){
+          total+=daysBetween(c.start,c.end);
+        }
+      }
+    });
+    return total;
+  }
+
+  function makeRow(e, jPoses, soldeN1, soldeN, isN1){
+    // Calcul : jours posés décomptés d'abord sur N-1, puis sur N
+    var soldeN1f=parseFloat(soldeN1)||0;
+    var soldeNf=parseFloat(soldeN)||0;
+    var posesN1=Math.min(jPoses,Math.max(0,soldeN1f)); // prélevés sur N-1
+    var posesN=Math.max(0,jPoses-posesN1);              // restant prélevé sur N
+    var restN1=soldeN1f-posesN1;
+    var restN=soldeNf-posesN;
+    var poses=isN1?posesN1:posesN;
+    var restant=isN1?restN1:restN;
+    var colorRest=restant>0?(isN1?'#ffb950':'#6ddc82'):restant<0?'#ff8f8f':'var(--text2)';
+    var colorPoses=poses>0?'var(--text)':'var(--text2)';
+    return '<div style="display:grid;grid-template-columns:1fr 80px 80px;gap:4px;align-items:center;padding:3px 8px;border-bottom:1px solid var(--border);">'
       +'<span style="font-size:11px;color:var(--text);">'+e.prenom+' '+e.nom+' <span style="color:var(--text2);font-size:10px;">'+e.site+'</span></span>'
-      +'<span style="font-size:11px;font-weight:700;color:'+color+';">'+fj(solde)+'j</span>'
+      +'<span style="font-size:11px;font-weight:600;color:'+colorPoses+';text-align:right;">'+fj(poses)+'j</span>'
+      +'<span style="font-size:11px;font-weight:700;color:'+colorRest+';text-align:right;">'+fj(restant)+'j</span>'
       +'</div>';
   }
+
   var listN1=document.getElementById('conge-n1-list');
   var listN=document.getElementById('conge-n-list');
   if(!DATA.empConges||!DATA.empConges.length){
-    if(listN1) listN1.innerHTML='<p style="font-size:12px;color:var(--text2);">Aucun employe</p>';
-    if(listN) listN.innerHTML='<p style="font-size:12px;color:var(--text2);">Aucun employe</p>';
+    if(listN1) listN1.innerHTML='<p style="font-size:12px;color:var(--text2);padding:8px;">Aucun employe</p>';
+    if(listN) listN.innerHTML='<p style="font-size:12px;color:var(--text2);padding:8px;">Aucun employe</p>';
     return;
   }
-  var sortedN1=DATA.empConges.slice().sort(function(a,b){return (parseFloat(b.soldeN)||0)-(parseFloat(a.soldeN)||0);});
-  var sortedN=DATA.empConges.slice().sort(function(a,b){return (parseFloat(b.soldeN1)||0)-(parseFloat(a.soldeN1)||0);});
-  if(listN1) listN1.innerHTML=sortedN1.map(function(e){
-    var s=parseFloat(e.soldeN)||0;
-    return makeRow(e,s,s>0?'#ffb950':s<0?'#ff8f8f':'var(--text2)');
+  var sorted=DATA.empConges.slice().sort(function(a,b){
+    return (a.nom+a.prenom).localeCompare(b.nom+b.prenom);
+  });
+  if(listN1) listN1.innerHTML=sorted.map(function(e){
+    var jP=getJoursPoses(e);
+    return makeRow(e,jP,e.soldeN,e.soldeN1,true);
   }).join('');
-  if(listN) listN.innerHTML=sortedN.map(function(e){
-    var s=parseFloat(e.soldeN1)||0;
-    return makeRow(e,s,s>0?'#6ddc82':s<0?'#ff8f8f':'var(--text2)');
+  if(listN) listN.innerHTML=sorted.map(function(e){
+    var jP=getJoursPoses(e);
+    return makeRow(e,jP,e.soldeN,e.soldeN1,false);
   }).join('');
 }
 
