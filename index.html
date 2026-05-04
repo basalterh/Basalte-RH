@@ -1183,14 +1183,24 @@ function renderDashboard(){
   var entrees=DATA.employes.filter(function(e){return e.entree&&e.entree>t;}).sort(function(a,b){return a.entree.localeCompare(b.entree);});
   document.getElementById('entrees-count').textContent=entrees.length;
   document.getElementById('entrees-list').innerHTML=entrees.length
-    ?entrees.map(function(e){return '<span style="font-size:11px;color:var(--text);">'+e.prenom+' '+e.nom+' <span style="color:var(--text2);">· '+e.contrat+'</span></span>';}).join('')
+    ?entrees.map(function(e){
+      return '<div style="display:flex;justify-content:space-between;align-items:center;">'
+        +'<span style="font-size:11px;color:var(--text);">'+e.prenom+' '+e.nom+' <span style="color:var(--text2);">· '+e.contrat+'</span></span>'
+        +'<span style="font-size:10px;font-weight:600;color:#6ddc82;">'+fmt(e.entree)+'</span>'
+        +'</div>';
+    }).join('')
     :'<span style="font-size:11px;color:var(--text2);">Aucune entrée prévue</span>';
 
   // Sorties futures
   var sorties=DATA.employes.filter(function(e){return e.sortie&&e.sortie>t;}).sort(function(a,b){return a.sortie.localeCompare(b.sortie);});
   document.getElementById('sorties-count').textContent=sorties.length;
   document.getElementById('sorties-list').innerHTML=sorties.length
-    ?sorties.map(function(e){return '<span style="font-size:11px;color:var(--text);">'+e.prenom+' '+e.nom+' <span style="color:var(--text2);">· '+e.contrat+'</span></span>';}).join('')
+    ?sorties.map(function(e){
+      return '<div style="display:flex;justify-content:space-between;align-items:center;">'
+        +'<span style="font-size:11px;color:var(--text);">'+e.prenom+' '+e.nom+' <span style="color:var(--text2);">· '+e.contrat+'</span></span>'
+        +'<span style="font-size:10px;font-weight:600;color:#ff8f8f;">'+fmt(e.sortie)+'</span>'
+        +'</div>';
+    }).join('')
     :'<span style="font-size:11px;color:var(--text2);">Aucune sortie prévue</span>';
 
   renderEcheancesResume();
