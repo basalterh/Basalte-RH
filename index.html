@@ -417,33 +417,6 @@ tr:last-child td{border-bottom:none;}
 
       <div id="section-conges" class="section">
         <!-- Cards congés N-1 et N -->
-        <div class="card" style="padding:12px 16px;margin-bottom:12px;">
-          <!-- En-tête grille -->
-          <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;flex-wrap:wrap;">
-            <span style="font-size:12px;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:0.5px;">Suivi des congés</span>
-            <select id="suivi-filter-site" class="form-select" style="width:auto;padding:3px 8px;font-size:11px;" onchange="renderCongesNCards()"><option value="">Tous sites</option></select>
-            <select id="suivi-filter-contrat" class="form-select" style="width:auto;padding:3px 8px;font-size:11px;" onchange="renderCongesNCards()"><option value="">Tous contrats</option><option>CDI</option><option>CDD</option></select>
-            <button class="conge-sort-btn active" id="suivi-sort-nom" onclick="setSuiviSort('nom',this)" style="padding:2px 8px;border-radius:6px;border:1px solid var(--accent);background:rgba(93,217,211,0.1);color:var(--accent);font-size:10px;cursor:pointer;">Nom</button>
-            <button class="conge-sort-btn" id="suivi-sort-restN1" onclick="setSuiviSort('restN1',this)" style="padding:2px 8px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:10px;cursor:pointer;">Restants N-1</button>
-            <button class="conge-sort-btn" id="suivi-sort-restN" onclick="setSuiviSort('restN',this)" style="padding:2px 8px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:10px;cursor:pointer;">Restants N</button>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 56px 56px 8px 56px 56px;align-items:center;margin-bottom:6px;padding-bottom:6px;border-bottom:2px solid var(--border);">
-            <div></div>
-            <div style="grid-column:2/4;display:grid;grid-template-columns:1fr 1fr;background:rgba(255,185,80,0.1);border:1px solid rgba(255,185,80,0.35);border-radius:6px;padding:3px 0;margin-right:4px;">
-              <span id="card-n1-title" style="font-size:9px;font-weight:700;color:#ffb950;text-align:center;grid-column:1/-1;margin-bottom:2px;">N-1</span>
-              <span style="font-size:9px;color:var(--text2);text-align:center;">Posés</span>
-              <span style="font-size:9px;color:var(--text2);text-align:center;">Restants</span>
-            </div>
-            <div></div>
-            <div style="grid-column:5/7;display:grid;grid-template-columns:1fr 1fr;background:rgba(109,220,130,0.1);border:1px solid rgba(109,220,130,0.35);border-radius:6px;padding:3px 0;">
-              <span id="card-n-title" style="font-size:9px;font-weight:700;color:#6ddc82;text-align:center;grid-column:1/-1;margin-bottom:2px;">N</span>
-              <span style="font-size:9px;color:var(--text2);text-align:center;">Posés</span>
-              <span style="font-size:9px;color:var(--text2);text-align:center;">Restants</span>
-            </div>
-          </div>
-          <div id="conge-n1-list"></div>
-          <div id="conge-n-list" style="display:none;"></div>
-        </div>
         <div class="card" style="margin-bottom:20px;">
           <div class="card-title">Vue annuelle</div>
           <div class="timeline-wrap" id="conge-timeline"></div>
@@ -1435,42 +1408,39 @@ function renderCongesNCards(){
 function syncEmpConges(){
   if(!DATA.empConges) DATA.empConges=[];
   var t=today();
-  // Tous les employes actifs (pas encore sortis)
   var actifs=DATA.employes.filter(function(e){return !e.sortie||e.sortie>=t;});
   // Ajouter les manquants
   actifs.forEach(function(emp){
     var exists=DATA.empConges.find(function(e){
-      return e.nom.trim().toLowerCase()===emp.nom.trim().toLowerCase()
-          && e.prenom.trim().toLowerCase()===emp.prenom.trim().toLowerCase();
+      return (e.nom||'').trim().toLowerCase()===(emp.nom||'').trim().toLowerCase()
+          && (e.prenom||'').trim().toLowerCase()===(emp.prenom||'').trim().toLowerCase();
     });
     if(!exists){
-      DATA.empConges.push({
-        id:genId(),
-        nom:emp.nom,prenom:emp.prenom,
+      DATA.empConges.push({id:genId(),nom:emp.nom,prenom:emp.prenom,
         site:emp.site||'',contrat:emp.contrat||'CDI',
-        acquisN:0,prisN:0,soldeN:0,
-        acquisN1:0,prisN1:0,soldeN1:0
-      });
+        acquisN:0,prisN:0,soldeN:0,acquisN1:0,prisN1:0,soldeN1:0});
     } else {
-      // Mettre à jour site et contrat
       exists.site=emp.site||exists.site;
       exists.contrat=emp.contrat||exists.contrat;
     }
   });
-  // Dédoublonner : garder une seule entrée par nom+prénom
-  var seen={};var toKeep=[];
+  // Détecter les doublons et les stocker pour affichage
+  var seen={};var toKeep=[];var doublons=[];
   DATA.empConges.forEach(function(e){
-    var k=e.nom.trim().toLowerCase()+'|'+e.prenom.trim().toLowerCase();
+    var k=(e.nom||'').trim().toLowerCase()+'|'+(e.prenom||'').trim().toLowerCase();
     if(!seen[k]){seen[k]=e;toKeep.push(e);}
     else{
-      // Fusionner : garder les soldes les plus élevés
+      // Enregistrer le doublon pour alerte
+      doublons.push(e.prenom+' '+e.nom);
+      // Fusionner les soldes sur l'entrée principale
       var s=seen[k];
       if((parseFloat(e.acquisN)||0)>(parseFloat(s.acquisN)||0)){s.acquisN=e.acquisN;s.prisN=e.prisN;s.soldeN=e.soldeN;}
       if((parseFloat(e.acquisN1)||0)>(parseFloat(s.acquisN1)||0)){s.acquisN1=e.acquisN1;s.prisN1=e.prisN1;s.soldeN1=e.soldeN1;}
     }
   });
-  DATA.empConges=toKeep;
-  saveData(); // Persister la déduplication dans Firebase
+  window._empCongesDoublons=doublons;
+  if(toKeep.length!==DATA.empConges.length){DATA.empConges=toKeep;saveData();}
+  else DATA.empConges=toKeep;
 }
 
 function renderConges(){
@@ -1802,7 +1772,20 @@ function updateCreditStatus(){
         +'</div>');
     }
   });
-  var allAlerts=alerts.concat(alertsZero);
+  // Alertes doublons
+  var alertsDoublons=[];
+  if(window._empCongesDoublons&&window._empCongesDoublons.length){
+    window._empCongesDoublons.forEach(function(nom){
+      alertsDoublons.push('<div style="display:flex;align-items:center;justify-content:space-between;gap:6px;padding:4px 8px;background:rgba(110,201,255,0.08);border:1px solid rgba(110,201,255,0.3);border-radius:6px;">'
+        +'<div style="display:flex;align-items:center;gap:6px;">'
+        +'<span style="font-size:13px;">⚠️</span>'
+        +'<span style="color:var(--accent2);font-size:11px;">Doublon détecté : <strong>'+nom+'</strong> — entrée fusionnée automatiquement</span>'
+        +'</div>'
+        +'</div>');
+    });
+  }
+
+  var allAlerts=alertsDoublons.concat(alerts).concat(alertsZero);
   var alertEl=document.getElementById('credit-alerts');
   if(alertEl) alertEl.innerHTML=allAlerts.length
     ?'<div style="display:flex;flex-direction:column;gap:4px;margin-bottom:8px;">'+allAlerts.join('')+'</div>'
