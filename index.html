@@ -417,9 +417,21 @@ tr:last-child td{border-bottom:none;}
 
       <div id="section-conges" class="section">
         <!-- Cards congés N-1 et N -->
-        <div class="card" style="margin-bottom:20px;">
-          <div class="card-title">Vue annuelle</div>
-          <div class="timeline-wrap" id="conge-timeline"></div>
+        <div class="card" style="margin-bottom:20px;padding:14px 16px;">
+          <!-- Toolbar vue annuelle -->
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+            <div class="card-title" style="margin:0;font-size:12px;">Vue annuelle</div>
+            <select id="tl-filter-site" class="form-select" style="width:auto;padding:3px 8px;font-size:11px;" onchange="renderCongeTimeline()"><option value="">Tous sites</option></select>
+            <select id="tl-filter-emp" class="form-select" style="width:auto;padding:3px 8px;font-size:11px;" onchange="renderCongeTimeline()"><option value="">Tous employés</option></select>
+            <div style="width:1px;height:16px;background:var(--border);"></div>
+            <button class="tl-view-btn active" id="tl-btn-avenir" onclick="setTlView('avenir',this)" style="padding:2px 8px;border-radius:6px;border:1px solid var(--accent);background:rgba(93,217,211,0.1);color:var(--accent);font-size:10px;cursor:pointer;">À venir</button>
+            <button class="tl-view-btn" id="tl-btn-passes" onclick="setTlView('passes',this)" style="padding:2px 8px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:10px;cursor:pointer;">Passés</button>
+            <button class="tl-view-btn" id="tl-btn-tous" onclick="setTlView('tous',this)" style="padding:2px 8px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:10px;cursor:pointer;">Tous</button>
+            <div style="width:1px;height:16px;background:var(--border);"></div>
+            <button class="tl-sort-btn active" id="tl-sort-prochains" onclick="setTlSort('prochains',this)" style="padding:2px 8px;border-radius:6px;border:1px solid var(--accent);background:rgba(93,217,211,0.1);color:var(--accent);font-size:10px;cursor:pointer;">Plus proches</button>
+            <button class="tl-sort-btn" id="tl-sort-nom" onclick="setTlSort('nom',this)" style="padding:2px 8px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:10px;cursor:pointer;">Nom</button>
+          </div>
+          <div id="conge-timeline" style="overflow-x:auto;cursor:grab;"></div>
         </div>
         <div class="card" style="padding:10px 14px;">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
@@ -1374,12 +1386,21 @@ function syncEmpConges(){
       return (e.nom||'').trim().toLowerCase()===(emp.nom||'').trim().toLowerCase()
           && (e.prenom||'').trim().toLowerCase()===(emp.prenom||'').trim().toLowerCase();
     });
+    function normSite(s){
+      if(!s)return'';
+      var siteMap={'site1':'BE1','site2':'BE2','site3':'BE3'};
+      if(siteMap[s]) return siteMap[s];
+      // Si c'est un code site Firebase, chercher le nom
+      if(DATA.sites&&DATA.sites[s]) return DATA.sites[s].name||s;
+      return s;
+    }
     if(!exists){
       DATA.empConges.push({id:genId(),nom:emp.nom,prenom:emp.prenom,
-        site:emp.site||'',contrat:emp.contrat||'CDI',
+        site:normSite(emp.site),contrat:emp.contrat||'CDI',
         acquisN:0,prisN:0,soldeN:0,acquisN1:0,prisN1:0,soldeN1:0});
     } else {
-      exists.site=emp.site||exists.site;
+      var ns=normSite(emp.site);
+      if(ns) exists.site=ns;
       exists.contrat=emp.contrat||exists.contrat;
     }
   });
@@ -1420,7 +1441,213 @@ function renderConges(){
   renderCongesTable();
 }
 function countJoursLunSam(start,end){var d=new Date(start+'T00:00:00'),e=new Date(end+'T00:00:00'),n=0;while(d<=e){var wd=d.getDay();if(wd!==0)n++;d.setDate(d.getDate()+1);}return n;}
-function renderCongeTimeline(){var wrap=document.getElementById('conge-timeline');var yr=new Date().getFullYear();var yrStart=yr+'-01-01',yrEnd=yr+'-12-31';var yrMs=new Date(yrEnd+'T00:00:00')-new Date(yrStart+'T00:00:00');var actifs=getActiveEmployes();if(!actifs.length){wrap.innerHTML='<p style="color:var(--text2);font-size:13px;">Aucun employé</p>';return;}var MOIS=['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];var rows='';actifs.forEach(function(e){var segs=DATA.conges.filter(function(c){return c.empId===e.id&&c.end>=yrStart&&c.start<=yrEnd&&c.statut!=='Refusé';});var bars='';segs.forEach(function(c){var s=Math.max(0,(new Date(c.start+'T00:00:00')-new Date(yrStart+'T00:00:00'))/yrMs*100);var en=Math.min(100,(new Date(c.end+'T00:00:00')-new Date(yrStart+'T00:00:00'))/yrMs*100);var w=Math.max(0.8,en-s);var col=e.color||getSiteColor(e.site);var nbj=countJoursLunSam(c.start,c.end);var barLabel=w>3?'<span style="position:absolute;left:50%;transform:translateX(-50%);font-size:9px;font-weight:700;color:rgba(10,14,20,0.85);white-space:nowrap;line-height:18px;">'+nbj+'j</span>':'';bars+='<div style="position:absolute;left:'+s+'%;width:'+w+'%;height:100%;background:'+col+';opacity:0.9;border-radius:3px;overflow:hidden;display:flex;align-items:center;justify-content:center;" title="'+fmt(c.start)+' → '+fmt(c.end)+' ('+nbj+' j)">'+barLabel+'</div>';});rows+='<div style="display:flex;align-items:center;margin-bottom:6px;"><div style="width:110px;flex-shrink:0;font-size:12px;font-weight:500;padding-right:10px;overflow:hidden;white-space:nowrap;">'+e.prenom+' '+e.nom+'</div><div style="flex:1;position:relative;height:20px;background:var(--surface2);border-radius:4px;overflow:hidden;">'+bars+'</div></div>';});var header='<div style="display:flex;align-items:center;margin-bottom:2px;"><div style="width:110px;flex-shrink:0;"></div><div style="flex:1;position:relative;height:14px;">';for(var mi=0;mi<12;mi++){var p2=(new Date(yr+'-'+(mi<9?'0':'')+(mi+1)+'-01T00:00:00')-new Date(yrStart+'T00:00:00'))/yrMs*100;header+='<span style="position:absolute;left:'+p2+'%;transform:translateX(-50%);font-size:9px;font-weight:600;color:var(--text2);opacity:0.6;">'+MOIS[mi]+'</span>';}header+='</div></div>';wrap.innerHTML=header+rows;}
+var _tlView='avenir';
+var _tlSort='prochains';
+
+function setTlView(v,btn){
+  _tlView=v;
+  document.querySelectorAll('.tl-view-btn').forEach(function(b){
+    b.style.border='1px solid var(--border)';b.style.background='transparent';b.style.color='var(--text2)';
+  });
+  if(btn){btn.style.border='1px solid var(--accent)';btn.style.background='rgba(93,217,211,0.1)';btn.style.color='var(--accent)';}
+  renderCongeTimeline();
+}
+
+function setTlSort(s,btn){
+  _tlSort=s;
+  document.querySelectorAll('.tl-sort-btn').forEach(function(b){
+    b.style.border='1px solid var(--border)';b.style.background='transparent';b.style.color='var(--text2)';
+  });
+  if(btn){btn.style.border='1px solid var(--accent)';btn.style.background='rgba(93,217,211,0.1)';btn.style.color='var(--accent)';}
+  renderCongeTimeline();
+}
+
+function renderCongeTimeline(){
+  var wrap=document.getElementById('conge-timeline');
+  if(!wrap) return;
+  var t=today();
+  var yr=new Date().getFullYear();
+  // Plage : juin N-1 → mai N+1 (période réelle des congés)
+  var yrStart=(yr-1)+'-06-01';
+  var yrEnd=(yr+1)+'-05-31';
+  var totalMs=new Date(yrEnd+'T00:00:00')-new Date(yrStart+'T00:00:00');
+  var TOTAL_PX=2400; // largeur totale en px pour scroll
+
+  // Peupler les filtres
+  var fsSite=document.getElementById('tl-filter-site');
+  var fsEmp=document.getElementById('tl-filter-emp');
+  if(fsSite&&fsSite.options.length<=1){
+    Object.entries(DATA.sites||{}).forEach(function(entry){
+      var o=document.createElement('option');o.value=entry[0];o.textContent=entry[1].name||entry[0];fsSite.appendChild(o);
+    });
+  }
+
+  var filterSite=(fsSite||{}).value||'';
+  var filterEmp=(fsEmp||{}).value||'';
+
+  var actifs=getActiveEmployes().filter(function(e){
+    if(filterSite&&e.site!==filterSite)return false;
+    return true;
+  });
+
+  // Peupler select employé
+  if(fsEmp&&fsEmp.options.length<=1){
+    actifs.forEach(function(e){
+      var o=document.createElement('option');o.value=e.id;o.textContent=e.prenom+' '+e.nom;fsEmp.appendChild(o);
+    });
+  }
+  if(filterEmp) actifs=actifs.filter(function(e){return e.id===filterEmp;});
+
+  // Filtrer les congés selon vue
+  function getCongesEmp(e){
+    return DATA.conges.filter(function(c){
+      if(c.empId!==e.id) return false;
+      if(c.statut==='Refusé') return false;
+      if(_tlView==='avenir') return c.end>=t;
+      if(_tlView==='passes') return c.end<t;
+      return true;
+    });
+  }
+
+  // Trier les employés
+  actifs.sort(function(a,b){
+    if(_tlSort==='nom') return (a.nom+a.prenom).localeCompare(b.nom+b.prenom);
+    // Plus proches : par date de prochain congé
+    var cA=getCongesEmp(a).sort(function(x,y){return x.start.localeCompare(y.start);});
+    var cB=getCongesEmp(b).sort(function(x,y){return x.start.localeCompare(y.start);});
+    var dA=cA.length?cA[0].start:'9999';
+    var dB=cB.length?cB[0].start:'9999';
+    return dA.localeCompare(dB);
+  });
+
+  if(!actifs.length){wrap.innerHTML='<p style="color:var(--text2);font-size:13px;">Aucun employé</p>';return;}
+
+  var MOIS=['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
+  var MOIS_FULL=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+  var NAME_W=120;
+
+  function dateToPx(dateStr){
+    return Math.round((new Date(dateStr+'T00:00:00')-new Date(yrStart+'T00:00:00'))/totalMs*TOTAL_PX);
+  }
+
+  // Curseur aujourd'hui
+  var todayPx=dateToPx(t);
+  var todayPct=Math.round(todayPx/TOTAL_PX*100);
+
+  // Hauteur ligne
+  var ROW_H=26;
+  var HEADER_H=36;
+
+  var html='<div style="position:relative;width:'+(NAME_W+TOTAL_PX)+'px;min-width:100%;">';
+
+  // En-tête mois
+  html+='<div style="position:relative;height:'+HEADER_H+'px;border-bottom:1px solid var(--border);margin-bottom:4px;">';
+  html+='<div style="position:absolute;left:0;width:'+NAME_W+'px;height:100%;"></div>';
+  // Fond alternance mois
+  var prevAnn=null;
+  for(var mi=0;mi<24;mi++){
+    var mDate=new Date(yrStart+'T00:00:00');
+    mDate.setMonth(mDate.getMonth()+mi);
+    var mStart=mDate.getFullYear()+'-'+(mDate.getMonth()<9?'0':'')+(mDate.getMonth()+1)+'-01';
+    var mEndDate=new Date(mDate.getFullYear(),mDate.getMonth()+1,0);
+    var mEnd=mEndDate.getFullYear()+'-'+(mEndDate.getMonth()<9?'0':'')+(mEndDate.getMonth()+1)+'-'+mEndDate.getDate();
+    if(mStart>yrEnd) break;
+    var px1=NAME_W+dateToPx(mStart);
+    var px2=Math.min(NAME_W+TOTAL_PX, NAME_W+dateToPx(mEnd)+1);
+    var mW=px2-px1;
+    if(mW<=0) continue;
+    var ann=mDate.getFullYear();
+    var mIdx=mDate.getMonth();
+    var bgMois=mIdx%2===0?'rgba(255,255,255,0.02)':'rgba(255,255,255,0.05)';
+    html+='<div style="position:absolute;left:'+px1+'px;width:'+mW+'px;height:100%;background:'+bgMois+';border-left:1px solid var(--border);">';
+    // Afficher mois et année
+    var label=MOIS[mIdx];
+    if(ann!==prevAnn){label+=' '+ann;prevAnn=ann;}
+    if(mW>28) html+='<div style="padding:2px 4px;font-size:9px;font-weight:700;color:var(--text2);white-space:nowrap;overflow:hidden;">'+label+'</div>';
+    // Semaines légères
+    if(mW>60){
+      var cur=new Date(mDate.getFullYear(),mDate.getMonth(),1);
+      while(cur.getMonth()===mDate.getMonth()){
+        if(cur.getDay()===1){
+          var wPx=NAME_W+dateToPx(cur.getFullYear()+'-'+(cur.getMonth()<9?'0':'')+(cur.getMonth()+1)+'-'+String(cur.getDate()).padStart(2,'0'));
+          if(wPx>px1) html+='<div style="position:absolute;top:0;left:'+(wPx-px1)+'px;width:1px;height:100%;background:rgba(255,255,255,0.04);"></div>';
+        }
+        cur.setDate(cur.getDate()+1);
+      }
+    }
+    html+='</div>';
+  }
+  // Curseur aujourd'hui dans l'en-tête
+  html+='<div style="position:absolute;top:0;left:'+(NAME_W+todayPx)+'px;width:2px;height:100%;background:var(--accent);opacity:0.8;"></div>';
+  html+='</div>';
+
+  // Lignes employés
+  var totalH=actifs.length*ROW_H;
+  html+='<div style="position:relative;height:'+totalH+'px;">';
+
+  // Colonnes mois (fond)
+  for(var mi2=0;mi2<24;mi2++){
+    var mDate2=new Date(yrStart+'T00:00:00');
+    mDate2.setMonth(mDate2.getMonth()+mi2);
+    if(mDate2.getFullYear()+'-01-01'>yrEnd) break;
+    var mStart2=mDate2.getFullYear()+'-'+(mDate2.getMonth()<9?'0':'')+(mDate2.getMonth()+1)+'-01';
+    var px3=NAME_W+dateToPx(mStart2);
+    if(px3>NAME_W+TOTAL_PX) break;
+    var bg2=mDate2.getMonth()%2===0?'rgba(255,255,255,0.01)':'rgba(255,255,255,0.03)';
+    var mEndDate2=new Date(mDate2.getFullYear(),mDate2.getMonth()+1,0);
+    var mEnd2=mEndDate2.getFullYear()+'-'+(mEndDate2.getMonth()<9?'0':'')+(mEndDate2.getMonth()+1)+'-'+mEndDate2.getDate();
+    var px4=Math.min(NAME_W+TOTAL_PX,NAME_W+dateToPx(mEnd2)+1);
+    html+='<div style="position:absolute;top:0;left:'+px3+'px;width:'+(px4-px3)+'px;height:100%;background:'+bg2+';border-left:1px solid rgba(255,255,255,0.04);"></div>';
+  }
+
+  // Curseur aujourd'hui
+  html+='<div style="position:absolute;top:0;left:'+(NAME_W+todayPx)+'px;width:2px;height:100%;background:var(--accent);opacity:0.6;z-index:5;">'
+    +'<div style="position:absolute;top:0;left:-18px;background:var(--accent);color:#0a0e14;font-size:8px;font-weight:700;padding:1px 3px;border-radius:3px;white-space:nowrap;">Auj.</div>'
+    +'</div>';
+
+  // Lignes employés
+  actifs.forEach(function(e,ei){
+    var top=ei*ROW_H;
+    var col=e.color||getSiteColor(e.site)||'var(--accent)';
+    // Ligne fond
+    html+='<div style="position:absolute;top:'+top+'px;left:0;width:100%;height:'+ROW_H+'px;border-bottom:1px solid rgba(255,255,255,0.03);">';
+    // Nom
+    html+='<div style="position:absolute;top:0;left:0;width:'+NAME_W+'px;height:100%;display:flex;align-items:center;gap:4px;padding-right:8px;">'
+      +'<div style="width:3px;height:14px;border-radius:2px;background:'+col+';flex-shrink:0;"></div>'
+      +'<span style="font-size:10px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text);">'+e.prenom+' '+e.nom+'</span>'
+      +'</div>';
+    // Barres congés
+    var conges=getCongesEmp(e);
+    conges.forEach(function(c){
+      var px1=NAME_W+Math.max(0,dateToPx(c.start));
+      var px2=NAME_W+Math.min(TOTAL_PX,dateToPx(c.end)+1);
+      var bW=Math.max(3,px2-px1);
+      var isPast=c.end<t;
+      var isAttendu=c.statut==='En attente';
+      var bCol=isPast?'rgba(150,150,150,0.5)':isAttendu?'rgba(255,185,80,0.7)':col;
+      var nbj=daysBetween(c.start,c.end);
+      var barLabel=bW>30?'<span style="position:absolute;left:50%;transform:translateX(-50%);font-size:8px;font-weight:700;color:rgba(10,14,20,0.9);white-space:nowrap;">'+nbj+'j</span>':'';
+      html+='<div style="position:absolute;top:4px;left:'+px1+'px;width:'+bW+'px;height:'+(ROW_H-8)+'px;background:'+bCol+';border-radius:3px;overflow:hidden;display:flex;align-items:center;justify-content:center;"'
+        +' title="'+e.prenom+' '+e.nom+' — '+fmt(c.start)+' → '+fmt(c.end)+' ('+nbj+'j) — '+c.statut+'">'+barLabel+'</div>';
+    });
+    html+='</div>';
+  });
+
+  html+='</div></div>';
+  wrap.innerHTML=html;
+
+  // Scroll jusqu'à aujourd'hui
+  setTimeout(function(){
+    var scrollTarget=NAME_W+todayPx-wrap.clientWidth/2;
+    wrap.scrollLeft=Math.max(0,scrollTarget);
+  },50);
+
+  // Drag to scroll
+  var isDragging=false,startX=0,scrollStart=0;
+  wrap.onmousedown=function(ev){isDragging=true;startX=ev.pageX;scrollStart=wrap.scrollLeft;wrap.style.cursor='grabbing';ev.preventDefault();};
+  document.onmousemove=function(ev){if(!isDragging)return;wrap.scrollLeft=scrollStart-(ev.pageX-startX);};
+  document.onmouseup=function(){isDragging=false;wrap.style.cursor='grab';};
+}
 function renderCongesTable(){
   var t=today();
   var site=document.getElementById('conge-filter-site')?document.getElementById('conge-filter-site').value:'';
@@ -1858,7 +2085,13 @@ function renderEmpCongeList(){
       +'<div style="display:flex;align-items:center;gap:5px;min-width:0;">'
       +'<div style="width:3px;height:18px;border-radius:2px;background:'+sc+';flex-shrink:0;"></div>'
       +'<span style="font-size:11px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+e.prenom+' '+e.nom+'</span>'
-      +'<span style="background:var(--accent)22;color:var(--accent);border-radius:3px;padding:0 4px;font-size:9px;font-weight:600;flex-shrink:0;">'+e.site+'</span>'
+      +(function(){
+        var s=e.site||'';
+        var siteMap={'site1':'BE1','site2':'BE2','site3':'BE3'};
+        if(siteMap[s])s=siteMap[s];
+        if(DATA.sites&&DATA.sites[s])s=DATA.sites[s].name||s;
+        return '<span style="background:var(--accent)22;color:var(--accent);border-radius:3px;padding:0 4px;font-size:9px;font-weight:600;flex-shrink:0;">'+s+'</span>';
+      })()
       +'</div>'
       +'<span style="font-size:11px;text-align:center;color:var(--text2);cursor:text;" contenteditable="true" data-ec-field="acquisN" data-ec-id="'+e.id+'">'+fj(aN1)+'</span>'
       +'<span style="font-size:11px;text-align:center;color:var(--text2);cursor:text;" contenteditable="true" data-ec-field="prisN" data-ec-id="'+e.id+'">'+fj(pN1)+'</span>'
