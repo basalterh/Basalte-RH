@@ -1383,13 +1383,10 @@ function renderCongesNCards(){
     return total;
   }
 
+  // Les données sont dans renderEmpCongeList — on met juste à jour les titres
   var listN1=document.getElementById('conge-n1-list');
-  if(!listN1) return;
-
-  if(!DATA.empConges||!DATA.empConges.length){
-    listN1.innerHTML='<p style="font-size:12px;color:var(--text2);padding:8px;">Aucun employe</p>';
-    return;
-  }
+  if(listN1) listN1.innerHTML='';
+  if(!DATA.empConges||!DATA.empConges.length) return;
 
   var suiviSite=document.getElementById('suivi-filter-site')&&document.getElementById('suivi-filter-site').value||'';
   var suiviContrat=document.getElementById('suivi-filter-contrat')&&document.getElementById('suivi-filter-contrat').value||'';
@@ -1436,30 +1433,43 @@ function renderCongesNCards(){
 }
 
 function syncEmpConges(){
-  // Ajouter les employes manquants dans empConges
   if(!DATA.empConges) DATA.empConges=[];
-  var actifs=getActiveEmployes();
+  var t=today();
+  // Tous les employes actifs (pas encore sortis)
+  var actifs=DATA.employes.filter(function(e){return !e.sortie||e.sortie>=t;});
+  // Ajouter les manquants
   actifs.forEach(function(emp){
     var exists=DATA.empConges.find(function(e){
-      return e.nom===emp.nom&&e.prenom===emp.prenom;
+      return e.nom.trim().toLowerCase()===emp.nom.trim().toLowerCase()
+          && e.prenom.trim().toLowerCase()===emp.prenom.trim().toLowerCase();
     });
     if(!exists){
       DATA.empConges.push({
         id:genId(),
-        nom:emp.nom,
-        prenom:emp.prenom,
-        site:emp.site||'',
-        contrat:emp.contrat||'CDI',
+        nom:emp.nom,prenom:emp.prenom,
+        site:emp.site||'',contrat:emp.contrat||'CDI',
         acquisN:0,prisN:0,soldeN:0,
         acquisN1:0,prisN1:0,soldeN1:0
       });
+    } else {
+      // Mettre à jour site et contrat
+      exists.site=emp.site||exists.site;
+      exists.contrat=emp.contrat||exists.contrat;
     }
   });
-  // Mettre à jour le site et contrat si changé dans employes
+  // Dédoublonner : garder une seule entrée par nom+prénom
+  var seen={};var toKeep=[];
   DATA.empConges.forEach(function(e){
-    var emp=DATA.employes.find(function(em){return em.nom===e.nom&&em.prenom===e.prenom;});
-    if(emp){e.site=emp.site||e.site;e.contrat=emp.contrat||e.contrat;}
+    var k=e.nom.trim().toLowerCase()+'|'+e.prenom.trim().toLowerCase();
+    if(!seen[k]){seen[k]=e;toKeep.push(e);}
+    else{
+      // Fusionner : garder les soldes les plus élevés
+      var s=seen[k];
+      if((parseFloat(e.acquisN)||0)>(parseFloat(s.acquisN)||0)){s.acquisN=e.acquisN;s.prisN=e.prisN;s.soldeN=e.soldeN;}
+      if((parseFloat(e.acquisN1)||0)>(parseFloat(s.acquisN1)||0)){s.acquisN1=e.acquisN1;s.prisN1=e.prisN1;s.soldeN1=e.soldeN1;}
+    }
   });
+  DATA.empConges=toKeep;
 }
 
 function renderConges(){
