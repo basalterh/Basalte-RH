@@ -430,6 +430,8 @@ tr:last-child td{border-bottom:none;}
             <div style="width:1px;height:16px;background:var(--border);"></div>
             <button class="tl-sort-btn active" id="tl-sort-prochains" onclick="setTlSort('prochains',this)" style="padding:2px 8px;border-radius:6px;border:1px solid var(--accent);background:rgba(93,217,211,0.1);color:var(--accent);font-size:10px;cursor:pointer;">Plus proches</button>
             <button class="tl-sort-btn" id="tl-sort-nom" onclick="setTlSort('nom',this)" style="padding:2px 8px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:10px;cursor:pointer;">Nom</button>
+            <div style="width:1px;height:16px;background:var(--border);"></div>
+            <select id="tl-filter-statut" class="form-select" style="width:auto;padding:3px 8px;font-size:11px;" onchange="renderCongeTimeline()"><option value="">Tous statuts</option><option value="Approuvé">Approuvé</option><option value="En attente">En attente</option><option value="Refusé">Refusé</option></select>
           </div>
           <div id="conge-timeline" style="overflow-x:auto;cursor:grab;"></div>
         </div>
@@ -1508,10 +1510,13 @@ function renderCongeTimeline(){
   }
 
   // Filtrer les congés selon vue
+  var filterStatut=(document.getElementById('tl-filter-statut')||{}).value||'';
   function getCongesEmp(e){
     return DATA.conges.filter(function(c){
       if(c.empId!==e.id) return false;
-      if(c.statut==='Refusé') return false;
+      // Si filtre statut actif, afficher même les refusés
+      if(!filterStatut&&c.statut==='Refusé') return false;
+      if(filterStatut&&c.statut!==filterStatut) return false;
       if(_tlView==='avenir') return c.end>=t;
       if(_tlView==='passes') return c.end<t;
       return true;
@@ -1547,11 +1552,14 @@ function renderCongeTimeline(){
   var ROW_H=26;
   var HEADER_H=36;
 
-  var html='<div style="position:relative;width:'+(NAME_W+TOTAL_PX)+'px;min-width:100%;">';
+  // Structure : wrapper avec position relative pour sticky
+  // Le container scroll est conge-timeline (overflow-x:auto)
+  // Les noms sont sticky à gauche
+  var html='<div style="position:relative;width:'+(NAME_W+TOTAL_PX)+'px;">';
 
-  // En-tête mois
-  html+='<div style="position:relative;height:'+HEADER_H+'px;border-bottom:1px solid var(--border);margin-bottom:4px;">';
-  html+='<div style="position:absolute;left:0;width:'+NAME_W+'px;height:100%;"></div>';
+  // En-tête mois — sticky en haut + colonne nom sticky
+  html+='<div style="position:sticky;top:0;z-index:15;background:var(--surface);height:'+HEADER_H+'px;border-bottom:1px solid var(--border);margin-bottom:4px;">';
+  html+='<div style="position:sticky;left:0;z-index:20;width:'+NAME_W+'px;height:100%;background:var(--surface);display:inline-block;vertical-align:top;float:left;"></div>';
   // Fond alternance mois
   var prevAnn=null;
   for(var mi=0;mi<24;mi++){
@@ -1620,8 +1628,8 @@ function renderCongeTimeline(){
     var col=e.color||getSiteColor(e.site)||'var(--accent)';
     // Ligne fond
     html+='<div style="position:absolute;top:'+top+'px;left:0;width:100%;height:'+ROW_H+'px;border-bottom:1px solid rgba(255,255,255,0.03);">';
-    // Nom
-    html+='<div style="position:absolute;top:0;left:0;width:'+NAME_W+'px;height:100%;display:flex;align-items:center;gap:4px;padding-right:8px;">'
+    // Nom sticky
+    html+='<div style="position:sticky;left:0;z-index:6;width:'+NAME_W+'px;height:'+ROW_H+'px;background:var(--surface);display:flex;align-items:center;gap:4px;padding-right:8px;float:left;">'
       +'<div style="width:3px;height:14px;border-radius:2px;background:'+col+';flex-shrink:0;"></div>'
       +'<span style="font-size:10px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text);">'+e.prenom+' '+e.nom+'</span>'
       +'</div>';
@@ -1630,6 +1638,7 @@ function renderCongeTimeline(){
     conges.forEach(function(c){
       var px1=NAME_W+Math.max(0,dateToPx(c.start));
       var px2=NAME_W+Math.min(TOTAL_PX,dateToPx(c.end)+1);
+      // px1/px2 déjà incluent NAME_W pour positionnement absolu
       var bW=Math.max(3,px2-px1);
       var isPast=c.end<t;
       var isAttendu=c.statut==='En attente';
