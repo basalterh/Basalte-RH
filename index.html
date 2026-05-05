@@ -1338,71 +1338,7 @@ function renderCongesNCards(){
   var t2=document.getElementById('card-n-title');
   if(t1) t1.textContent='N-1 — avant juin '+yr;
   if(t2) t2.textContent='N — avant juin '+(yr+1);
-  // Sync filtres fantomes
-  var sf=document.getElementById('suivi-filter-site');
-  var ecf=document.getElementById('ec-filter-site');
-  if(sf&&ecf) sf.value=ecf.value;
-
-  function fj(v){var n=parseFloat(v)||0;return(n>=0?'':'')+n.toFixed(1).replace('.',',');}
-
-  function getJoursPoses(e){
-    var total=0;
-    DATA.conges.forEach(function(c){
-      if(c.statut==='Approuvé'||c.statut==='En attente'){
-        var emp=getEmp(c.empId);
-        if(emp&&emp.nom===e.nom&&emp.prenom===e.prenom) total+=daysBetween(c.start,c.end);
-      }
-    });
-    return total;
-  }
-
-  // Les données sont dans renderEmpCongeList — on met juste à jour les titres
-  var listN1=document.getElementById('conge-n1-list');
-  if(listN1) listN1.innerHTML='';
-  if(!DATA.empConges||!DATA.empConges.length) return;
-
-  var suiviSite=document.getElementById('suivi-filter-site')&&document.getElementById('suivi-filter-site').value||'';
-  var suiviContrat=document.getElementById('suivi-filter-contrat')&&document.getElementById('suivi-filter-contrat').value||'';
-  var sorted=DATA.empConges.slice().filter(function(e){
-    if(suiviSite&&e.site!==suiviSite)return false;
-    if(suiviContrat&&e.contrat!==suiviContrat)return false;
-    return true;
-  }).sort(function(a,b){
-    if(_suiviSort==='nom') return (a.nom+a.prenom).localeCompare(b.nom+b.prenom);
-    var jPA=DATA.conges.filter(function(c){var em=getEmp(c.empId);return em&&em.nom===a.nom&&em.prenom===a.prenom&&(c.statut==='Approuvé'||c.statut==='En attente');}).reduce(function(s,c){return s+daysBetween(c.start,c.end);},0);
-    var jPB=DATA.conges.filter(function(c){var em=getEmp(c.empId);return em&&em.nom===b.nom&&em.prenom===b.prenom&&(c.statut==='Approuvé'||c.statut==='En attente');}).reduce(function(s,c){return s+daysBetween(c.start,c.end);},0);
-    var sN1a=parseFloat(a.soldeN)||0,sNa=parseFloat(a.soldeN1)||0;
-    var sN1b=parseFloat(b.soldeN)||0,sNb=parseFloat(b.soldeN1)||0;
-    var restN1a=sN1a-Math.min(jPA,Math.max(0,sN1a));
-    var restN1b=sN1b-Math.min(jPB,Math.max(0,sN1b));
-    var restNa=sNa-Math.max(0,jPA-Math.min(jPA,Math.max(0,sN1a)));
-    var restNb=sNb-Math.max(0,jPB-Math.min(jPB,Math.max(0,sN1b)));
-    if(_suiviSort==='restN1') return restN1b-restN1a;
-    if(_suiviSort==='restN') return restNb-restNa;
-    return (a.nom+a.prenom).localeCompare(b.nom+b.prenom);
-  });
-
-  listN1.innerHTML=sorted.map(function(e){
-    var jP=getJoursPoses(e);
-    var sN1=parseFloat(e.soldeN)||0;
-    var sN=parseFloat(e.soldeN1)||0;
-    var posN1=Math.min(jP,Math.max(0,sN1));
-    var posN=Math.max(0,jP-posN1);
-    var restN1=sN1-posN1;
-    var restN=sN-posN;
-    var crN1=restN1>0?'#ffb950':restN1<0?'#ff8f8f':'var(--text2)';
-    var crN=restN>0?'#6ddc82':restN<0?'#ff8f8f':'var(--text2)';
-    var cpN1=posN1>0?'var(--text)':'var(--text2)';
-    var cpN=posN>0?'var(--text)':'var(--text2)';
-    return '<div style="display:grid;grid-template-columns:1fr 56px 56px 8px 56px 56px;align-items:center;padding:5px 0;border-bottom:1px solid var(--border);">'
-      +'<span style="font-size:12px;font-weight:500;color:var(--text);">'+e.prenom+' '+e.nom+' <span style="background:var(--accent)22;color:var(--accent);border-radius:4px;padding:0 4px;font-size:9px;font-weight:600;">'+e.site+'</span></span>'
-      +'<span style="font-size:12px;font-weight:600;color:'+cpN1+';text-align:center;">'+fj(posN1)+'</span>'
-      +'<span style="font-size:12px;font-weight:700;color:'+crN1+';text-align:center;">'+fj(restN1)+'</span>'
-      +'<span></span>'
-      +'<span style="font-size:12px;font-weight:600;color:'+cpN+';text-align:center;">'+fj(posN)+'</span>'
-      +'<span style="font-size:12px;font-weight:700;color:'+crN+';text-align:center;">'+fj(restN)+'</span>'
-      +'</div>';
-  }).join('');
+  // Les données sont affichées dans renderEmpCongeList — rien d'autre à faire
 }
 
 function syncEmpConges(){
