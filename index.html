@@ -417,7 +417,6 @@ tr:last-child td{border-bottom:none;}
 
       <div id="section-conges" class="section">
         <!-- Cards congés N-1 et N -->
-        
         <div class="card" style="margin-bottom:20px;">
           <div class="card-title">Vue annuelle</div>
           <div class="timeline-wrap" id="conge-timeline"></div>
@@ -1341,7 +1340,9 @@ function renderCongesNCards(){
   if(t1) t1.textContent='N-1 — avant juin '+yr;
   if(t2) t2.textContent='N — avant juin '+(yr+1);
   // Sync filtres fantomes
-
+  var sf=document.getElementById('suivi-filter-site');
+  var ecf=document.getElementById('ec-filter-site');
+  if(sf&&ecf) sf.value=ecf.value;
 
   function fj(v){var n=parseFloat(v)||0;return(n>=0?'':'')+n.toFixed(1).replace('.',',');}
 
@@ -1357,9 +1358,17 @@ function renderCongesNCards(){
   }
 
   // Les données sont dans renderEmpCongeList — on met juste à jour les titres
+  var listN1=document.getElementById('conge-n1-list');
+  if(listN1) listN1.innerHTML='';
   if(!DATA.empConges||!DATA.empConges.length) return;
 
-  var sorted=DATA.empConges.slice().sort(function(a,b){
+  var suiviSite=document.getElementById('suivi-filter-site')&&document.getElementById('suivi-filter-site').value||'';
+  var suiviContrat=document.getElementById('suivi-filter-contrat')&&document.getElementById('suivi-filter-contrat').value||'';
+  var sorted=DATA.empConges.slice().filter(function(e){
+    if(suiviSite&&e.site!==suiviSite)return false;
+    if(suiviContrat&&e.contrat!==suiviContrat)return false;
+    return true;
+  }).sort(function(a,b){
     if(_suiviSort==='nom') return (a.nom+a.prenom).localeCompare(b.nom+b.prenom);
     var jPA=DATA.conges.filter(function(c){var em=getEmp(c.empId);return em&&em.nom===a.nom&&em.prenom===a.prenom&&(c.statut==='Approuvé'||c.statut==='En attente');}).reduce(function(s,c){return s+daysBetween(c.start,c.end);},0);
     var jPB=DATA.conges.filter(function(c){var em=getEmp(c.empId);return em&&em.nom===b.nom&&em.prenom===b.prenom&&(c.statut==='Approuvé'||c.statut==='En attente');}).reduce(function(s,c){return s+daysBetween(c.start,c.end);},0);
