@@ -477,6 +477,7 @@ tr:last-child td{border-bottom:none;}
               <div id="credit-status" style="font-size:11px;color:var(--text2);"></div>
               <button onclick="crediterMois()" id="btn-crediter" style="padding:3px 9px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;cursor:pointer;font-size:11px;color:var(--accent);font-family:inherit;">💳 Créditer le mois</button>
               <label style="display:inline-flex;align-items:center;gap:5px;padding:3px 9px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;cursor:pointer;font-size:11px;color:var(--accent);" title="Importer soldes depuis PDF">📄 PDF<input type="file" id="conge-pdf-input" accept=".pdf" style="display:none;"></label>
+              <button onclick="nettoyerDoublons()" style="padding:3px 9px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;cursor:pointer;font-size:11px;color:#ff8f8f;font-family:inherit;">🧹 Doublons</button>
               <button id="btn-add-empconge" style="width:24px;height:24px;border-radius:50%;background:var(--accent);color:#0a0e14;border:none;font-size:14px;cursor:pointer;font-weight:700;">+</button>
             </div>
           </div>
@@ -1470,6 +1471,7 @@ function syncEmpConges(){
     }
   });
   DATA.empConges=toKeep;
+  saveData(); // Persister la déduplication dans Firebase
 }
 
 function renderConges(){
@@ -1806,6 +1808,26 @@ function updateCreditStatus(){
   if(alertEl) alertEl.innerHTML=allAlerts.length
     ?'<div style="display:flex;flex-direction:column;gap:4px;margin-bottom:8px;">'+allAlerts.join('')+'</div>'
     :'';
+}
+
+function nettoyerDoublons(){
+  if(!DATA.empConges) return;
+  var avant=DATA.empConges.length;
+  var seen={};var toKeep=[];
+  DATA.empConges.forEach(function(e){
+    var k=e.nom.trim().toLowerCase()+'|'+e.prenom.trim().toLowerCase();
+    if(!seen[k]){seen[k]=e;toKeep.push(e);}
+    else{
+      var s=seen[k];
+      if((parseFloat(e.acquisN)||0)>(parseFloat(s.acquisN)||0)){s.acquisN=e.acquisN;s.prisN=e.prisN;s.soldeN=e.soldeN;}
+      if((parseFloat(e.acquisN1)||0)>(parseFloat(s.acquisN1)||0)){s.acquisN1=e.acquisN1;s.prisN1=e.prisN1;s.soldeN1=e.soldeN1;}
+    }
+  });
+  DATA.empConges=toKeep;
+  saveData();
+  renderEmpCongeList();
+  var apres=DATA.empConges.length;
+  showToast('Nettoyage OK — '+(avant-apres)+' doublon(s) supprime(s), '+apres+' employe(s) restants');
 }
 
 function crediterMois(){
