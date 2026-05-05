@@ -1498,6 +1498,15 @@ function renderCongeTimeline(){
   }
   if(filterEmp) actifs=actifs.filter(function(e){return e.id===filterEmp;});
 
+  // Par défaut : masquer les employés sans congé à venir ou en cours
+  if(!filterEmp){
+    actifs=actifs.filter(function(e){
+      return DATA.conges.some(function(c){
+        return c.empId===e.id&&c.statut!=='Refusé'&&c.end>=t;
+      });
+    });
+  }
+
   // Filtrer les congés selon vue
   function getCongesEmp(e){
     return DATA.conges.filter(function(c){
