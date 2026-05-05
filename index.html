@@ -1841,64 +1841,104 @@ function crediterMois(){
   showToast(msg,4000);
 }
 
-function renderEmpCongeList(){var wrap=document.getElementById('emp-conge-list');if(!wrap)return;if(!DATA.empConges||!DATA.empConges.length){wrap.innerHTML='<p style="color:var(--text2);font-size:13px;padding:12px 0;">Aucun employé. Cliquez sur + pour ajouter.</p>';return;}
-  var ecSite=document.getElementById('ec-filter-site')&&document.getElementById('ec-filter-site').value||'';
-  var ecContrat=document.getElementById('ec-filter-contrat')&&document.getElementById('ec-filter-contrat').value||'';
-  var sorted=DATA.empConges.slice().filter(function(e){
+function renderEmpCongeList(){
+  var wrap=document.getElementById('emp-conge-list');
+  if(!wrap)return;
+  var ecSite=(document.getElementById('ec-filter-site')||{}).value||'';
+  var ecContrat=(document.getElementById('ec-filter-contrat')||{}).value||'';
+  // Dédoublonner empConges par nom+prénom, garder le plus complet
+  var seen={};
+  DATA.empConges.forEach(function(e){
+    var k=e.nom+'|'+e.prenom;
+    if(!seen[k]){seen[k]=e;}
+    else{
+      // Garder celui qui a le plus de données
+      var s=seen[k];
+      if((parseFloat(e.acquisN)||0)+(parseFloat(e.soldeN)||0)>(parseFloat(s.acquisN)||0)+(parseFloat(s.soldeN)||0)) seen[k]=e;
+    }
+  });
+  var list=Object.values(seen);
+  // Filtres
+  list=list.filter(function(e){
     if(ecSite&&e.site!==ecSite)return false;
     if(ecContrat&&e.contrat!==ecContrat)return false;
     return true;
-  }).sort(function(a,b){
+  });
+  // Tri
+  list.sort(function(a,b){
     if(_ecSort==='nom') return (a.nom+a.prenom).localeCompare(b.nom+b.prenom);
     if(_ecSort==='solde') return ((parseFloat(b.soldeN)||0)+(parseFloat(b.soldeN1)||0))-((parseFloat(a.soldeN)||0)+(parseFloat(a.soldeN1)||0));
     if(_ecSort==='soldeN') return (parseFloat(b.soldeN)||0)-(parseFloat(a.soldeN)||0);
     return 0;
   });
-  var html='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px;">';
-  sorted.forEach(function(e){function fj(v){return(parseFloat(v)||0).toFixed(2).replace('.',',');}var sc='var(--accent)';var soldColor=((parseFloat(e.soldeN)||0)+(parseFloat(e.soldeN1)||0))>=0?'var(--accent)':'#ff8f8f';// Calculer jours posés pour cet employé
-      var jP=0;
-      DATA.conges.forEach(function(c){
-        if(c.statut==='Approuvé'||c.statut==='En attente'){
-          var emp2=getEmp(c.empId);
-          if(emp2&&emp2.nom===e.nom&&emp2.prenom===e.prenom) jP+=daysBetween(c.start,c.end);
-        }
-      });
-      var sN1=parseFloat(e.soldeN)||0;
-      var sN=parseFloat(e.soldeN1)||0;
-      var aN1=parseFloat(e.acquisN)||0;
-      var pN1=parseFloat(e.prisN)||0;
-      var aN=parseFloat(e.acquisN1)||0;
-      var pN=parseFloat(e.prisN1)||0;
-      var crN1=sN1>0?'#ffb950':sN1<0?'#ff8f8f':'var(--text2)';
-      var crN=sN>0?'#6ddc82':sN<0?'#ff8f8f':'var(--text2)';
-      html+='<div style="border-bottom:1px solid var(--border);">'
-      +'<div style="display:grid;grid-template-columns:180px repeat(3,52px) 8px repeat(3,52px) 56px;align-items:center;padding:4px 0;cursor:pointer;" data-ec-toggle="'+e.id+'">'
-      +'<div style="display:flex;align-items:center;gap:5px;">'
+  if(!list.length){
+    wrap.innerHTML='<p style="color:var(--text2);font-size:13px;padding:12px 0;">Aucun employe.</p>';
+    return;
+  }
+  function fj(v){return(parseFloat(v)||0).toFixed(1);}
+  // Grille : Nom(1fr) | AN1 | PN1 | SN1 | sep(6px) | AN | PN | SN | actions(60px)
+  var GRID='grid-template-columns:1fr 52px 52px 58px 6px 52px 52px 58px 60px';
+  var html='';
+  list.forEach(function(e){
+    var aN1=parseFloat(e.acquisN)||0, pN1=parseFloat(e.prisN)||0, sN1=parseFloat(e.soldeN)||0;
+    var aN=parseFloat(e.acquisN1)||0, pN=parseFloat(e.prisN1)||0, sN=parseFloat(e.soldeN1)||0;
+    var sc=e.color||'var(--accent)';
+    var crN1=sN1>0?'#ffb950':sN1<0?'#ff8f8f':'var(--text2)';
+    var crN=sN>0?'#6ddc82':sN<0?'#ff8f8f':'var(--text2)';
+    html+='<div style="display:grid;'+GRID+';align-items:center;padding:4px 0;border-bottom:1px solid var(--border);gap:0;">'
+      // Nom
+      +'<div style="display:flex;align-items:center;gap:5px;min-width:0;">'
       +'<div style="width:3px;height:18px;border-radius:2px;background:'+sc+';flex-shrink:0;"></div>'
-      +'<span style="font-size:11px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+e.prenom+' '+e.nom+'</span>'
-      +'<span style="background:var(--accent)22;color:var(--accent);border-radius:4px;padding:0 3px;font-size:9px;font-weight:600;flex-shrink:0;">'+e.site+'</span>'
+      +'<span style="font-size:11px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+e.prenom+' '+e.nom+'</span>'
+      +'<span style="background:var(--accent)22;color:var(--accent);border-radius:3px;padding:0 3px;font-size:9px;font-weight:600;flex-shrink:0;">'+e.site+'</span>'
       +'</div>'
-      // N-1 : acquis, pris, solde
-      +'<span style="font-size:11px;text-align:center;color:var(--text2);" contenteditable="true" data-ec-field="acquisN" data-ec-id="'+e.id+'">'+fj(aN1)+'</span>'
-      +'<span style="font-size:11px;text-align:center;color:var(--text2);" contenteditable="true" data-ec-field="prisN" data-ec-id="'+e.id+'">'+fj(pN1)+'</span>'
-      +'<span style="font-size:11px;text-align:center;font-weight:700;color:'+crN1+';" contenteditable="true" data-ec-field="soldeN" data-ec-id="'+e.id+'">'+fj(sN1)+'</span>'
-      +'<span></span>'
-      // N : acquis, pris, solde
-      +'<span style="font-size:11px;text-align:center;color:var(--text2);" contenteditable="true" data-ec-field="acquisN1" data-ec-id="'+e.id+'">'+fj(aN)+'</span>'
-      +'<span style="font-size:11px;text-align:center;color:var(--text2);" contenteditable="true" data-ec-field="prisN1" data-ec-id="'+e.id+'">'+fj(pN)+'</span>'
-      +'<span style="font-size:11px;text-align:center;font-weight:700;color:'+crN+';" contenteditable="true" data-ec-field="soldeN1" data-ec-id="'+e.id+'">'+fj(sN)+'</span>'
+      // N-1
+      +'<span style="font-size:11px;text-align:center;color:var(--text2);cursor:text;" contenteditable="true" data-ec-field="acquisN" data-ec-id="'+e.id+'">'+fj(aN1)+'</span>'
+      +'<span style="font-size:11px;text-align:center;color:var(--text2);cursor:text;" contenteditable="true" data-ec-field="prisN" data-ec-id="'+e.id+'">'+fj(pN1)+'</span>'
+      +'<span style="font-size:12px;text-align:center;font-weight:700;color:'+crN1+';cursor:text;" contenteditable="true" data-ec-field="soldeN" data-ec-id="'+e.id+'">'+fj(sN1)+'</span>'
+      // Séparateur
+      +'<div style="display:flex;justify-content:center;"><div style="width:1px;height:16px;background:var(--border);"></div></div>'
+      // N
+      +'<span style="font-size:11px;text-align:center;color:var(--text2);cursor:text;" contenteditable="true" data-ec-field="acquisN1" data-ec-id="'+e.id+'">'+fj(aN)+'</span>'
+      +'<span style="font-size:11px;text-align:center;color:var(--text2);cursor:text;" contenteditable="true" data-ec-field="prisN1" data-ec-id="'+e.id+'">'+fj(pN)+'</span>'
+      +'<span style="font-size:12px;text-align:center;font-weight:700;color:'+crN+';cursor:text;" contenteditable="true" data-ec-field="soldeN1" data-ec-id="'+e.id+'">'+fj(sN)+'</span>'
       // Actions
-      +'<div style="display:flex;align-items:center;justify-content:flex-end;gap:3px;">'
+      +'<div style="display:flex;justify-content:flex-end;gap:3px;">'
       +'<button class="btn btn-icon" style="width:20px;height:20px;padding:0;font-size:10px;" data-ec-edit="'+e.id+'">✎</button>'
       +'<button class="btn btn-icon btn-danger" style="width:20px;height:20px;padding:0;font-size:10px;" data-ec-del="'+e.id+'">✕</button>'
       +'</div>'
-      +'</div>'
-      +'<div style="display:flex;align-items:center;gap:4px;">'
-      +'<button class="btn btn-icon" style="width:22px;height:22px;padding:0;font-size:11px;" data-ec-edit="'+e.id+'">✎</button>'
-      +'<button class="btn btn-icon btn-danger" style="width:22px;height:22px;padding:0;font-size:11px;" data-ec-del="'+e.id+'">✕</button>'
-      +'<span style="font-size:12px;color:var(--text2);" id="ec-arrow-'+e.id+'">▼</span>'
-      +'</div></div>'
-      +'</div>';});wrap.innerHTML=html;wrap.onclick=function(ev){var be=ev.target.closest('[data-ec-edit]'),bx=ev.target.closest('[data-ec-del]');if(be){openModalEmpConge(be.getAttribute('data-ec-edit'));return;}if(bx){deleteEmpConge(bx.getAttribute('data-ec-del'));return;}var toggle=ev.target.closest('[data-ec-toggle]');if(toggle){var eid=toggle.getAttribute('data-ec-toggle');var detail=document.getElementById('ec-detail-'+eid);var arrow=document.getElementById('ec-arrow-'+eid);if(!detail)return;var open=detail.style.display==='block';detail.style.display=open?'none':'block';if(arrow)arrow.style.transform=open?'':'rotate(180deg)';}};wrap.onblur=function(ev){var el=ev.target;if(!el||!el.getAttribute)return;var field=el.getAttribute('data-ec-field'),eid=el.getAttribute('data-ec-id');if(!field||!eid)return;var val=parseFloat((el.textContent||'').replace(',','.'))||0;for(var k=0;k<DATA.empConges.length;k++){if(DATA.empConges[k].id===eid){DATA.empConges[k][field]=val;break;}}saveData();};}
+      +'</div>';
+  });
+  wrap.innerHTML=html;
+  // En-tête colonnes
+  var hdr=document.getElementById('ec-col-header');
+  if(hdr) hdr.style.gridTemplateColumns=GRID.replace('grid-template-columns:','');
+  // Events contenteditable
+  wrap.querySelectorAll('[contenteditable]').forEach(function(el){
+    el.addEventListener('blur',function(){
+      var field=el.getAttribute('data-ec-field');
+      var eid=el.getAttribute('data-ec-id');
+      var val=parseFloat(el.textContent.replace(',','.'))||0;
+      for(var k=0;k<DATA.empConges.length;k++){
+        if(DATA.empConges[k].id===eid){DATA.empConges[k][field]=val;break;}
+      }
+      saveData();
+    });
+  });
+  // Events boutons
+  wrap.onclick=function(ev){
+    var be=ev.target.closest('[data-ec-edit]');
+    var bd=ev.target.closest('[data-ec-del]');
+    if(be) openModalEmpConge(be.getAttribute('data-ec-edit'));
+    if(bd){
+      var eid=bd.getAttribute('data-ec-del');
+      if(confirm('Supprimer cet employe ?')){
+        DATA.empConges=DATA.empConges.filter(function(e){return e.id!==eid;});
+        saveData();renderEmpCongeList();
+      }
+    }
+  };
+}
 function openModalEmpConge(id){var modal=document.getElementById('modal-emp-conge');if(!modal)return;document.getElementById('modal-ec-title').textContent=id?'Modifier':'Ajouter un employé';if(id){var entry=null;for(var k=0;k<DATA.empConges.length;k++){if(DATA.empConges[k].id===id){entry=DATA.empConges[k];break;}}if(!entry)return;document.getElementById('ec-id').value=entry.id;document.getElementById('ec-nom').value=entry.nom||'';document.getElementById('ec-prenom').value=entry.prenom||'';document.getElementById('ec-site').value=entry.site||'BE1';document.getElementById('ec-contrat').value=entry.contrat||'CDI';document.getElementById('ec-acq-n').value=entry.acquisN||0;document.getElementById('ec-pris-n').value=entry.prisN||0;document.getElementById('ec-sol-n').value=entry.soldeN||0;document.getElementById('ec-acq-n1').value=entry.acquisN1||0;document.getElementById('ec-pris-n1').value=entry.prisN1||0;document.getElementById('ec-sol-n1').value=entry.soldeN1||0;}else{['ec-id','ec-nom','ec-prenom'].forEach(function(f){document.getElementById(f).value='';});['ec-acq-n','ec-pris-n','ec-sol-n','ec-acq-n1','ec-pris-n1','ec-sol-n1'].forEach(function(f){document.getElementById(f).value=0;});document.getElementById('ec-site').value='BE1';document.getElementById('ec-contrat').value='CDI';}modal.classList.add('active');}
 function saveEmpConge(){var nom=document.getElementById('ec-nom').value.trim(),prenom=document.getElementById('ec-prenom').value.trim();if(!nom||!prenom){showToast('Nom et Prénom obligatoires');return;}var id=document.getElementById('ec-id').value||genId();var entry={id,nom,prenom,site:document.getElementById('ec-site').value,contrat:document.getElementById('ec-contrat').value,acquisN:parseFloat(document.getElementById('ec-acq-n').value)||0,prisN:parseFloat(document.getElementById('ec-pris-n').value)||0,soldeN:parseFloat(document.getElementById('ec-sol-n').value)||0,acquisN1:parseFloat(document.getElementById('ec-acq-n1').value)||0,prisN1:parseFloat(document.getElementById('ec-pris-n1').value)||0,soldeN1:parseFloat(document.getElementById('ec-sol-n1').value)||0};var idx2=-1;for(var k=0;k<DATA.empConges.length;k++){if(DATA.empConges[k].id===id){idx2=k;break;}}if(idx2>=0)DATA.empConges[idx2]=entry;else DATA.empConges.push(entry);saveData();closeModal('modal-emp-conge');renderEmpCongeList();showToast('Enregistré ✓');}
 function deleteEmpConge(id){if(!confirm('Supprimer ?'))return;DATA.empConges=DATA.empConges.filter(function(e){return e.id!==id;});saveData();renderEmpCongeList();}
