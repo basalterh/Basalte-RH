@@ -462,7 +462,9 @@ tr:last-child td{border-bottom:none;}
               <select id="ec-filter-contrat" class="form-select" style="width:auto;padding:3px 8px;font-size:11px;" onchange="renderEmpCongeList()"><option value="">Tous contrats</option><option>CDI</option><option>CDD</option></select>
               <div style="width:1px;height:16px;background:var(--border);"></div>
               <div id="credit-status" style="font-size:11px;color:var(--text2);"></div>
-              <button onclick="crediterMois()" id="btn-crediter" style="padding:3px 9px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;cursor:pointer;font-size:11px;color:var(--accent);font-family:inherit;">💳 Créditer le mois</button>
+              <button onclick="crediterMois()" id="btn-crediter" style="padding:3px 9px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;cursor:pointer;font-size:11px;color:var(--accent);font-family:inherit;">💳 Créditer</button>
+              <button onclick="deduireConges()" style="padding:3px 9px;background:var(--surface2);border:1px solid rgba(255,143,143,0.5);border-radius:7px;cursor:pointer;font-size:11px;color:#ff8f8f;font-family:inherit;">✂ Déduire</button>
+              <button onclick="resetCreditErreur()" style="padding:3px 9px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;cursor:pointer;font-size:11px;color:var(--text2);font-family:inherit;" title="Réinitialiser le bouton Créditer">↺</button>
               <label style="display:inline-flex;align-items:center;gap:5px;padding:3px 9px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;cursor:pointer;font-size:11px;color:var(--accent);" title="Importer soldes depuis PDF">📄 PDF<input type="file" id="conge-pdf-input" accept=".pdf" style="display:none;"></label>
               <button id="btn-add-empconge" style="width:24px;height:24px;border-radius:50%;background:var(--accent);color:#0a0e14;border:none;font-size:14px;cursor:pointer;font-weight:700;">+</button>
             </div>
@@ -2252,13 +2254,16 @@ function deleteEmpConge(id){if(!confirm('Supprimer ?'))return;DATA.empConges=DAT
 window._fbReady=false;window._fbDb=null;
 var _b=document.getElementById('btn-add-empconge');if(_b)_b.onclick=function(){openModalEmpConge(null);};
 function resetCreditErreur(){
-  // Juste supprimer la cle du credit de mai 2026 — sans toucher aux données
-  var keyMai='credit_2026_5';
-  if(DATA[keyMai]){
-    delete DATA[keyMai];
+  // Réinitialiser le bouton Créditer du mois courant
+  var d=new Date();
+  var key='credit_'+d.getFullYear()+'_'+(d.getMonth()+1);
+  if(DATA[key]){
+    delete DATA[key];
     saveData();
-    showToast('Bouton credit de mai 2026 reinitialise',3000);
+    showToast('Bouton credit reinitialise pour ce mois',3000);
     updateCreditStatus();
+  } else {
+    showToast('Rien a reinitialiser pour ce mois');
   }
 }
 
