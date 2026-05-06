@@ -470,7 +470,7 @@ tr:last-child td{border-bottom:none;}
           <!-- Alertes entrées en cours de mois -->
           <div id="credit-alerts" style="margin-bottom:8px;"></div>
           <!-- En-tête colonnes -->
-          <div id="ec-col-header" style="display:grid;grid-template-columns:1fr 52px 52px 58px 8px 52px 52px 58px 8px 64px 44px;align-items:end;margin-bottom:4px;padding-bottom:6px;border-bottom:2px solid var(--border);gap:0;">
+          <div id="ec-col-header" style="display:grid;grid-template-columns:1fr 52px 52px 58px 8px 52px 52px 58px 8px 62px 8px 62px 44px;align-items:end;margin-bottom:4px;padding-bottom:6px;border-bottom:2px solid var(--border);gap:0;">
             <div></div>
             <div style="grid-column:2/5;display:grid;grid-template-columns:52px 52px 58px;background:rgba(255,185,80,0.1);border:1px solid rgba(255,185,80,0.35);border-radius:6px;padding:3px 2px;margin-right:4px;text-align:center;">
               <span id="card-n1-title" style="font-size:9px;font-weight:700;color:#ffb950;grid-column:1/-1;margin-bottom:2px;">N-1</span>
@@ -486,9 +486,14 @@ tr:last-child td{border-bottom:none;}
               <span style="font-size:9px;color:var(--text2);font-weight:700;">Solde</span>
             </div>
             <div></div>
+            <div style="background:rgba(93,217,211,0.08);border:1px solid rgba(93,217,211,0.3);border-radius:6px;padding:3px 4px;text-align:center;">
+              <span style="font-size:9px;font-weight:700;color:var(--accent);display:block;margin-bottom:2px;">Solde total</span>
+              <span style="font-size:8px;color:var(--text2);">N-1 + N</span>
+            </div>
+            <div></div>
             <div style="background:rgba(179,157,219,0.1);border:1px solid rgba(179,157,219,0.35);border-radius:6px;padding:3px 4px;text-align:center;">
               <span style="font-size:9px;font-weight:700;color:#b39ddb;display:block;margin-bottom:2px;">Solde prev.</span>
-              <span style="font-size:8px;color:var(--text2);">apres poses</span>
+              <span style="font-size:8px;color:var(--text2);">total - poses</span>
             </div>
             <div style="font-size:9px;color:var(--text2);text-align:right;padding-right:2px;">Actions</div>
           </div>
@@ -2090,7 +2095,7 @@ function renderEmpCongeList(){
   });
 
   function fj(v){return(parseFloat(v)||0).toFixed(1);}
-  var GRID='1fr 52px 52px 58px 8px 52px 52px 58px 8px 64px 44px';
+  var GRID='1fr 52px 52px 58px 8px 52px 52px 58px 8px 62px 8px 62px 44px';
 
   var html='';
   list.forEach(function(e){
@@ -2118,34 +2123,31 @@ function renderEmpCongeList(){
       +'<span style="font-size:11px;text-align:center;color:var(--text2);cursor:text;" contenteditable="true" data-ec-field="acquisN1" data-ec-id="'+e.id+'">'+fj(aN)+'</span>'
       +'<span style="font-size:11px;text-align:center;color:var(--text2);cursor:text;" contenteditable="true" data-ec-field="prisN1" data-ec-id="'+e.id+'">'+fj(pN)+'</span>'
       +'<span style="font-size:12px;text-align:center;font-weight:700;color:'+crN+';cursor:text;" contenteditable="true" data-ec-field="soldeN1" data-ec-id="'+e.id+'">'+fj(sN)+'</span>'
-      // Calcul solde prévisionnel
+      // Solde total (N-1 + N)
       +'<div style="display:flex;justify-content:center;align-items:center;"><div style="width:1px;height:16px;background:var(--border);"></div></div>'
       +(function(){
-        var yr=new Date().getFullYear();
-        // Période N-1 : 01/06/(yr-2) → 31/05/(yr-1) — à prendre avant 31/05/yr
-        var debutN1=(yr-2)+'-06-01'; var finN1=(yr-1)+'-05-31';
-        // Période N   : 01/06/(yr-1) → 31/05/yr     — à prendre avant 31/05/(yr+1)
-        var debutN=(yr-1)+'-06-01';  var finN=yr+'-05-31';
-        var jPN1=0, jPN=0;
+        var st=sN1+sN;
+        var cst=st>0?'var(--accent)':st<0?'#ff8f8f':'var(--text2)';
+        return '<span style="font-size:12px;text-align:center;font-weight:700;color:'+cst+';">'+fj(st)+'</span>';
+      })()
+      // Solde prévisionnel = total - jours posés
+      +'<div style="display:flex;justify-content:center;align-items:center;"><div style="width:1px;height:16px;background:var(--border);"></div></div>'
+      +(function(){
+        // Jours posés (approuvés + en attente)
+        var jP=0;
         DATA.conges.forEach(function(c){
           if(c.statut==='Approuvé'||c.statut==='En attente'){
             var emp2=getEmp(c.empId);
             if(emp2&&(emp2.nom||'').trim().toLowerCase()===(e.nom||'').trim().toLowerCase()
               &&(emp2.prenom||'').trim().toLowerCase()===(e.prenom||'').trim().toLowerCase()){
-              // Congé qui chevauche la période N-1
-              if(c.start<=finN1&&c.end>=debutN1) jPN1+=daysBetween(c.start,c.end);
-              // Congé qui chevauche la période N
-              else if(c.start<=finN&&c.end>=debutN) jPN+=daysBetween(c.start,c.end);
+              jP+=daysBetween(c.start,c.end);
             }
           }
         });
-        // Solde prévisionnel : on déduit d'abord de N-1 puis le reste sur N
-        var totalPoses=jPN1+jPN;
-        var restN1=sN1-Math.min(totalPoses,Math.max(0,sN1));
-        var restN=sN-Math.max(0,totalPoses-Math.min(totalPoses,Math.max(0,sN1)));
-        var soldeTotal=restN1+restN;
+        // Solde prévisionnel = Solde total - jours posés
+        var soldeTotal=(sN1+sN)-jP;
         var cprev=soldeTotal>0?'#b39ddb':soldeTotal<0?'#ff8f8f':'var(--text2)';
-        return '<span style="font-size:11px;text-align:center;font-weight:700;color:'+cprev+';">'+fj(soldeTotal)+'</span>';
+        return '<span style="font-size:12px;text-align:center;font-weight:700;color:'+cprev+';">'+fj(soldeTotal)+'</span>';
       })()
       +'<div style="display:flex;justify-content:flex-end;gap:3px;padding-right:2px;">'
       +'<button class="btn btn-icon" style="width:20px;height:20px;padding:0;font-size:10px;" data-ec-edit="'+e.id+'">✎</button>'
