@@ -2056,7 +2056,6 @@ function renderEmpCongeList(){
   var wrap=document.getElementById('emp-conge-list');
   if(!wrap) return;
 
-  // Remplir filtres sites si vides
   var fsEl=document.getElementById('ec-filter-site');
   if(fsEl&&fsEl.options.length<=1){
     Object.entries(DATA.sites||{}).forEach(function(entry){
@@ -2070,7 +2069,7 @@ function renderEmpCongeList(){
   var ecContrat=(document.getElementById('ec-filter-contrat')||{}).value||'';
 
   if(!DATA.empConges||!DATA.empConges.length){
-    wrap.innerHTML='<p style="color:var(--text2);font-size:13px;padding:12px 0;">Aucun employe. Cliquez sur + pour ajouter.</p>';
+    wrap.innerHTML='<p style="color:var(--text2);font-size:13px;padding:12px 0;">Aucun employe.</p>';
     return;
   }
 
@@ -2085,97 +2084,95 @@ function renderEmpCongeList(){
       if((parseFloat(e.acquisN1)||0)>(parseFloat(s.acquisN1)||0)){s.acquisN1=e.acquisN1;s.prisN1=e.prisN1;s.soldeN1=e.soldeN1;}
     }
   });
-  var list=Object.values(seen);
-
-  // Filtres
-  list=list.filter(function(e){
-    if(ecSite&&e.site!==ecSite) return false;
-    if(ecContrat&&e.contrat!==ecContrat) return false;
+  var list=Object.values(seen).filter(function(e){
+    if(ecSite&&e.site!==ecSite)return false;
+    if(ecContrat&&e.contrat!==ecContrat)return false;
     return true;
-  });
-
-  // Tri
-  list.sort(function(a,b){
+  }).sort(function(a,b){
     if(_ecSort==='nom') return ((a.nom||'')+(a.prenom||'')).localeCompare((b.nom||'')+(b.prenom||''));
     if(_ecSort==='solde') return ((parseFloat(b.soldeN)||0)+(parseFloat(b.soldeN1)||0))-((parseFloat(a.soldeN)||0)+(parseFloat(a.soldeN1)||0));
     if(_ecSort==='soldeN') return (parseFloat(b.soldeN)||0)-(parseFloat(a.soldeN)||0);
     return 0;
   });
 
+  if(!list.length){
+    wrap.innerHTML='<p style="color:var(--text2);font-size:13px;padding:12px 0;">Aucun employe.</p>';
+    return;
+  }
+
   function fj(v){return(parseFloat(v)||0).toFixed(1);}
   var GRID='1fr 16px 58px 16px 52px 52px 58px 8px 52px 52px 58px 8px 62px 8px 62px 44px';
+  var rows='';
 
-  var html='';
   list.forEach(function(e){
     var aN1=parseFloat(e.acquisN)||0, pN1=parseFloat(e.prisN)||0, sN1=parseFloat(e.soldeN)||0;
     var aN=parseFloat(e.acquisN1)||0, pN=parseFloat(e.prisN1)||0, sN=parseFloat(e.soldeN1)||0;
+    var rN2=parseFloat(e.restantN2)||0;
     var sc=e.color||'var(--accent)';
     var crN1=sN1>0?'#ffb950':sN1<0?'#ff8f8f':'var(--text2)';
     var crN=sN>0?'#6ddc82':sN<0?'#ff8f8f':'var(--text2)';
-    html+='<div style="display:grid;grid-template-columns:'+GRID+';align-items:center;padding:5px 0;border-bottom:1px solid var(--border);gap:0;">'
+    var crN2=rN2>0?'#ff8f8f':'var(--text2)';
+    var st=sN1+sN;
+    var cst=st>0?'var(--accent)':st<0?'#ff8f8f':'var(--text2)';
+    // Jours posés
+    var jP=0;
+    DATA.conges.forEach(function(c){
+      if(c.statut==='Approuvé'||c.statut==='En attente'){
+        var emp2=getEmp(c.empId);
+        if(emp2&&(emp2.nom||'').trim().toLowerCase()===(e.nom||'').trim().toLowerCase()
+          &&(emp2.prenom||'').trim().toLowerCase()===(e.prenom||'').trim().toLowerCase()){
+          jP+=daysBetween(c.start,c.end);
+        }
+      }
+    });
+    var sprev=st-jP;
+    var cprev=sprev>0?'#b39ddb':sprev<0?'#ff8f8f':'var(--text2)';
+    // Site normalisé
+    var siteKey=e.site||'';
+    var siteMap={'site1':'BE1','site2':'BE2','site3':'BE3'};
+    var siteName=siteMap[siteKey]||(DATA.sites&&DATA.sites[siteKey]&&DATA.sites[siteKey].name)||siteKey;
+
+    rows+='<div style="display:grid;grid-template-columns:'+GRID+';align-items:center;padding:4px 0;border-bottom:1px solid var(--border);gap:0;">'
+      // Nom
       +'<div style="display:flex;align-items:center;gap:5px;min-width:0;">'
       +'<div style="width:3px;height:18px;border-radius:2px;background:'+sc+';flex-shrink:0;"></div>'
       +'<span style="font-size:11px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+e.prenom+' '+e.nom+'</span>'
-      +(function(){
-        var s=e.site||'';
-        var siteMap={'site1':'BE1','site2':'BE2','site3':'BE3'};
-        if(siteMap[s])s=siteMap[s];
-        if(DATA.sites&&DATA.sites[s])s=DATA.sites[s].name||s;
-        return '<span style="background:var(--accent)22;color:var(--accent);border-radius:3px;padding:0 4px;font-size:9px;font-weight:600;flex-shrink:0;">'+s+'</span>';
-      })()
+      +'<span style="background:var(--accent)22;color:var(--accent);border-radius:3px;padding:0 4px;font-size:9px;font-weight:600;flex-shrink:0;">'+siteName+'</span>'
       +'</div>'
-      // Séparateur N-2
+      // Sep N-2
       +'<div style="display:flex;justify-content:center;align-items:center;"><div style="width:2px;height:16px;background:rgba(255,100,100,0.35);border-radius:2px;"></div></div>'
-      // Restant N-2 (éditable, hors calcul)
-      +'<span style="font-size:12px;text-align:center;font-weight:700;color:'+crN2+';cursor:text;background:rgba(255,100,100,0.06);border-radius:4px;padding:0 2px;" contenteditable="true" data-ec-field="restantN2" data-ec-id="'+e.id+'">'+fj(restN2)+'</span>'
-      // Séparateur N-2 fin
+      // Restant N-2
+      +'<span contenteditable="true" data-ec-field="restantN2" data-ec-id="'+e.id+'" style="font-size:12px;text-align:center;font-weight:700;color:'+crN2+';cursor:text;background:rgba(255,100,100,0.06);border-radius:4px;padding:0 2px;">'+fj(rN2)+'</span>'
+      // Sep N-2 fin
       +'<div style="display:flex;justify-content:center;align-items:center;"><div style="width:2px;height:16px;background:rgba(255,100,100,0.35);border-radius:2px;"></div></div>'
-      +'<span style="font-size:11px;text-align:center;color:var(--text2);cursor:text;" contenteditable="true" data-ec-field="acquisN" data-ec-id="'+e.id+'">'+fj(aN1)+'</span>'
-      +'<span style="font-size:11px;text-align:center;color:var(--text2);cursor:text;" contenteditable="true" data-ec-field="prisN" data-ec-id="'+e.id+'">'+fj(pN1)+'</span>'
-      +'<span style="font-size:12px;text-align:center;font-weight:700;color:'+crN1+';cursor:text;" contenteditable="true" data-ec-field="soldeN" data-ec-id="'+e.id+'">'+fj(sN1)+'</span>'
+      // N-1 acquis pris solde
+      +'<span contenteditable="true" data-ec-field="acquisN" data-ec-id="'+e.id+'" style="font-size:11px;text-align:center;color:var(--text2);cursor:text;">'+fj(aN1)+'</span>'
+      +'<span contenteditable="true" data-ec-field="prisN" data-ec-id="'+e.id+'" style="font-size:11px;text-align:center;color:var(--text2);cursor:text;">'+fj(pN1)+'</span>'
+      +'<span contenteditable="true" data-ec-field="soldeN" data-ec-id="'+e.id+'" style="font-size:12px;text-align:center;font-weight:700;color:'+crN1+';cursor:text;">'+fj(sN1)+'</span>'
       +'<div style="display:flex;justify-content:center;align-items:center;"><div style="width:1px;height:16px;background:var(--border);"></div></div>'
-      +'<span style="font-size:11px;text-align:center;color:var(--text2);cursor:text;" contenteditable="true" data-ec-field="acquisN1" data-ec-id="'+e.id+'">'+fj(aN)+'</span>'
-      +'<span style="font-size:11px;text-align:center;color:var(--text2);cursor:text;" contenteditable="true" data-ec-field="prisN1" data-ec-id="'+e.id+'">'+fj(pN)+'</span>'
-      +'<span style="font-size:12px;text-align:center;font-weight:700;color:'+crN+';cursor:text;" contenteditable="true" data-ec-field="soldeN1" data-ec-id="'+e.id+'">'+fj(sN)+'</span>'
-      // Solde total (N-1 + N)
+      // N acquis pris solde
+      +'<span contenteditable="true" data-ec-field="acquisN1" data-ec-id="'+e.id+'" style="font-size:11px;text-align:center;color:var(--text2);cursor:text;">'+fj(aN)+'</span>'
+      +'<span contenteditable="true" data-ec-field="prisN1" data-ec-id="'+e.id+'" style="font-size:11px;text-align:center;color:var(--text2);cursor:text;">'+fj(pN)+'</span>'
+      +'<span contenteditable="true" data-ec-field="soldeN1" data-ec-id="'+e.id+'" style="font-size:12px;text-align:center;font-weight:700;color:'+crN+';cursor:text;">'+fj(sN)+'</span>'
       +'<div style="display:flex;justify-content:center;align-items:center;"><div style="width:1px;height:16px;background:var(--border);"></div></div>'
-      +(function(){
-        var st=sN1+sN;
-        var cst=st>0?'var(--accent)':st<0?'#ff8f8f':'var(--text2)';
-        return '<span style="font-size:12px;text-align:center;font-weight:700;color:'+cst+';">'+fj(st)+'</span>';
-      })()
-      // Solde prévisionnel = total - jours posés
+      // Solde total
+      +'<span style="font-size:12px;text-align:center;font-weight:700;color:'+cst+';">'+fj(st)+'</span>'
       +'<div style="display:flex;justify-content:center;align-items:center;"><div style="width:1px;height:16px;background:var(--border);"></div></div>'
-      +(function(){
-        // Jours posés (approuvés + en attente)
-        var jP=0;
-        DATA.conges.forEach(function(c){
-          if(c.statut==='Approuvé'||c.statut==='En attente'){
-            var emp2=getEmp(c.empId);
-            if(emp2&&(emp2.nom||'').trim().toLowerCase()===(e.nom||'').trim().toLowerCase()
-              &&(emp2.prenom||'').trim().toLowerCase()===(e.prenom||'').trim().toLowerCase()){
-              jP+=daysBetween(c.start,c.end);
-            }
-          }
-        });
-        // Solde prévisionnel = Solde total - jours posés
-        var soldeTotal=(sN1+sN)-jP;
-        var cprev=soldeTotal>0?'#b39ddb':soldeTotal<0?'#ff8f8f':'var(--text2)';
-        return '<span style="font-size:12px;text-align:center;font-weight:700;color:'+cprev+';">'+fj(soldeTotal)+'</span>';
-      })()
+      // Solde prévisionnel
+      +'<span style="font-size:12px;text-align:center;font-weight:700;color:'+cprev+';">'+fj(sprev)+'</span>'
+      // Actions
       +'<div style="display:flex;justify-content:flex-end;gap:3px;padding-right:2px;">'
       +'<button class="btn btn-icon" style="width:20px;height:20px;padding:0;font-size:10px;" data-ec-edit="'+e.id+'">✎</button>'
       +'<button class="btn btn-icon btn-danger" style="width:20px;height:20px;padding:0;font-size:10px;" data-ec-del="'+e.id+'">✕</button>'
       +'</div>'
       +'</div>';
   });
-  wrap.innerHTML=html;
 
-  // En-tête colonnes
+  wrap.innerHTML=rows;
+
   var hdr=document.getElementById('ec-col-header');
   if(hdr) hdr.style.gridTemplateColumns=GRID;
 
-  // Contenteditable blur → save
   wrap.querySelectorAll('[contenteditable]').forEach(function(el){
     el.addEventListener('blur',function(){
       var field=el.getAttribute('data-ec-field');
@@ -2188,7 +2185,6 @@ function renderEmpCongeList(){
     });
   });
 
-  // Boutons ✎ ✕
   wrap.onclick=function(ev){
     var be=ev.target.closest('[data-ec-edit]');
     var bd=ev.target.closest('[data-ec-del]');
