@@ -2254,16 +2254,55 @@ function deleteEmpConge(id){if(!confirm('Supprimer ?'))return;DATA.empConges=DAT
 window._fbReady=false;window._fbDb=null;
 var _b=document.getElementById('btn-add-empconge');if(_b)_b.onclick=function(){openModalEmpConge(null);};
 function resetCreditErreur(){
-  // Réinitialiser le bouton Créditer du mois courant
   var d=new Date();
-  var key='credit_'+d.getFullYear()+'_'+(d.getMonth()+1);
-  if(DATA[key]){
-    delete DATA[key];
+  var keyC='credit_'+d.getFullYear()+'_'+(d.getMonth()+1);
+  var keyD='deduire_'+d.getFullYear()+'_'+(d.getMonth()+1);
+  var reset=false;
+  if(DATA[keyC]){delete DATA[keyC];reset=true;}
+  if(DATA[keyD]){delete DATA[keyD];reset=true;}
+  if(reset){
     saveData();
-    showToast('Bouton credit reinitialise pour ce mois',3000);
+    showToast('Boutons Credit et Deduire reinitialises pour ce mois',3000);
     updateCreditStatus();
   } else {
     showToast('Rien a reinitialiser pour ce mois');
+  }
+}
+
+function appliquerCorrectionAvril2026(){
+  var KEY='correction_avril_2026_done';
+  if(DATA[KEY]) return; // deja applique
+  var corrections=[
+    {nom:'lebon',prenom:'damien',jours:30},
+    {nom:'denegri',prenom:'yvan',jours:17},
+    {nom:'rossard',prenom:'nicolas',jours:3}
+  ];
+  var applied=false;
+  corrections.forEach(function(corr){
+    var ec=DATA.empConges.find(function(e){
+      return (e.nom||'').trim().toLowerCase()===corr.nom
+          &&(e.prenom||'').trim().toLowerCase()===corr.prenom;
+    });
+    if(!ec) return;
+    var acquisN1=parseFloat(ec.acquisN)||0;
+    var prisN1=parseFloat(ec.prisN)||0;
+    var soldeN1=acquisN1-prisN1;
+    var dedN1=Math.min(corr.jours,Math.max(0,soldeN1));
+    var dedN=corr.jours-dedN1;
+    ec.prisN=prisN1+dedN1;
+    ec.soldeN=acquisN1-ec.prisN;
+    if(dedN>0){
+      var acquisN=parseFloat(ec.acquisN1)||0;
+      var prisN=parseFloat(ec.prisN1)||0;
+      ec.prisN1=prisN+dedN;
+      ec.soldeN1=acquisN-ec.prisN1;
+    }
+    applied=true;
+  });
+  if(applied){
+    DATA[KEY]=true;
+    saveData();
+    console.log('Correction avril 2026 appliquee');
   }
 }
 
