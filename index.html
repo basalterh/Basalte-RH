@@ -470,42 +470,40 @@ tr:last-child td{border-bottom:none;}
           <!-- Alertes entrées en cours de mois -->
           <div id="credit-alerts" style="margin-bottom:8px;"></div>
           <!-- En-tête colonnes -->
-          <div id="ec-col-header" style="display:grid;grid-template-columns:1fr 16px 58px 16px 52px 52px 58px 8px 52px 52px 58px 8px 62px 8px 62px 44px;align-items:end;margin-bottom:4px;padding-bottom:6px;border-bottom:2px solid var(--border);gap:0;">
+                    <div id="ec-col-header" style="display:grid;grid-template-columns:1fr 16px 58px 16px 52px 52px 58px 8px 52px 52px 58px 8px 62px 8px 62px 44px;align-items:end;margin-bottom:4px;padding-bottom:6px;border-bottom:2px solid var(--border);gap:0;">
             <div></div>
-            <!-- Séparateur visuel fort avant N-2 -->
-            <div style="display:flex;justify-content:center;align-items:flex-end;padding-bottom:4px;"><div style="width:2px;height:28px;background:rgba(255,100,100,0.4);border-radius:2px;"></div></div>
-            <div style="background:rgba(255,100,100,0.08);border:1px solid rgba(255,100,100,0.35);border-radius:6px;padding:3px 4px;text-align:center;margin-right:6px;">
-              <span style="font-size:9px;font-weight:700;color:#ff8f8f;display:block;margin-bottom:2px;">Restant N-2</span>
+            <div style="display:flex;justify-content:center;align-items:flex-end;padding-bottom:0;"><div style="width:2px;height:46px;background:rgba(255,100,100,0.4);border-radius:2px;"></div></div>
+            <div style="height:46px;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:6px;padding:0 4px;text-align:center;background:rgba(255,100,100,0.08);border:1px solid rgba(255,100,100,0.35);margin-right:4px;">
+              <span style="font-size:9px;font-weight:700;color:#ff8f8f;margin-bottom:2px;">Restant N-2</span>
               <span style="font-size:8px;color:var(--text2);">expiré</span>
             </div>
-            <!-- Séparateur visuel fort après N-2 -->
-            <div style="display:flex;justify-content:center;align-items:flex-end;padding-bottom:4px;"><div style="width:2px;height:28px;background:rgba(255,100,100,0.4);border-radius:2px;"></div></div>
-            <div style="grid-column:5/8;display:grid;grid-template-columns:52px 52px 58px;background:rgba(255,185,80,0.1);border:1px solid rgba(255,185,80,0.35);border-radius:6px;padding:3px 2px;margin-right:4px;text-align:center;">
-              <span id="card-n1-title" style="font-size:9px;font-weight:700;color:#ffb950;grid-column:1/-1;margin-bottom:2px;">N-1</span>
-              <span style="font-size:9px;color:var(--text2);">Acquis</span>
-              <span style="font-size:9px;color:var(--text2);">Pris</span>
-              <span style="font-size:9px;color:var(--text2);font-weight:700;">Solde</span>
+            <div style="display:flex;justify-content:center;align-items:flex-end;padding-bottom:0;"><div style="width:2px;height:46px;background:rgba(255,100,100,0.4);border-radius:2px;"></div></div>
+            <div style="grid-column:5/8;height:46px;display:grid;grid-template-rows:auto 1fr;grid-template-columns:52px 52px 58px;background:rgba(255,185,80,0.1);border:1px solid rgba(255,185,80,0.35);border-radius:6px;padding:5px 2px 4px;margin-right:4px;text-align:center;box-sizing:border-box;">
+              <span id="card-n1-title" style="font-size:9px;font-weight:700;color:#ffb950;grid-column:1/-1;margin-bottom:4px;">N-1</span>
+              <span style="font-size:9px;color:var(--text2);align-self:end;">Acquis</span>
+              <span style="font-size:9px;color:var(--text2);align-self:end;">Pris</span>
+              <span style="font-size:9px;color:var(--text2);font-weight:700;align-self:end;">Solde</span>
             </div>
-            <div></div>
-            <div style="grid-column:9/12;display:grid;grid-template-columns:52px 52px 58px;background:rgba(109,220,130,0.1);border:1px solid rgba(109,220,130,0.35);border-radius:6px;padding:3px 2px;text-align:center;">
-              <span id="card-n-title" style="font-size:9px;font-weight:700;color:#6ddc82;grid-column:1/-1;margin-bottom:2px;">N</span>
-              <span style="font-size:9px;color:var(--text2);">Acquis</span>
-              <span style="font-size:9px;color:var(--text2);">Pris</span>
-              <span style="font-size:9px;color:var(--text2);font-weight:700;">Solde</span>
+            <div style="display:flex;justify-content:center;align-items:center;"><div style="width:1px;height:30px;background:var(--border);"></div></div>
+            <div style="grid-column:9/12;height:46px;display:grid;grid-template-rows:auto 1fr;grid-template-columns:52px 52px 58px;background:rgba(109,220,130,0.1);border:1px solid rgba(109,220,130,0.35);border-radius:6px;padding:5px 2px 4px;text-align:center;box-sizing:border-box;">
+              <span id="card-n-title" style="font-size:9px;font-weight:700;color:#6ddc82;grid-column:1/-1;margin-bottom:4px;">N</span>
+              <span style="font-size:9px;color:var(--text2);align-self:end;">Acquis</span>
+              <span style="font-size:9px;color:var(--text2);align-self:end;">Pris</span>
+              <span style="font-size:9px;color:var(--text2);font-weight:700;align-self:end;">Solde</span>
             </div>
-            <div></div>
-            <div style="background:rgba(93,217,211,0.08);border:1px solid rgba(93,217,211,0.3);border-radius:6px;padding:3px 4px;text-align:center;">
-              <span style="font-size:9px;font-weight:700;color:var(--accent);display:block;margin-bottom:2px;">Solde total</span>
+            <div style="display:flex;justify-content:center;align-items:center;"><div style="width:1px;height:30px;background:var(--border);"></div></div>
+            <div style="height:46px;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:6px;padding:0 4px;text-align:center;background:rgba(93,217,211,0.08);border:1px solid rgba(93,217,211,0.3);">
+              <span style="font-size:9px;font-weight:700;color:var(--accent);margin-bottom:2px;">Solde total</span>
               <span style="font-size:8px;color:var(--text2);">N-1 + N</span>
             </div>
-            <div></div>
-            <div style="background:rgba(179,157,219,0.1);border:1px solid rgba(179,157,219,0.35);border-radius:6px;padding:3px 4px;text-align:center;">
-              <span style="font-size:9px;font-weight:700;color:#b39ddb;display:block;margin-bottom:2px;">Solde prev.</span>
+            <div style="display:flex;justify-content:center;align-items:center;"><div style="width:1px;height:30px;background:var(--border);"></div></div>
+            <div style="height:46px;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:6px;padding:0 4px;text-align:center;background:rgba(179,157,219,0.1);border:1px solid rgba(179,157,219,0.35);">
+              <span style="font-size:9px;font-weight:700;color:#b39ddb;margin-bottom:2px;">Solde prev.</span>
               <span style="font-size:8px;color:var(--text2);">total - poses</span>
             </div>
-            <div style="font-size:9px;color:var(--text2);text-align:right;padding-right:2px;">Actions</div>
+            <div style="font-size:9px;color:var(--text2);text-align:right;display:flex;align-items:flex-end;justify-content:flex-end;height:46px;padding-bottom:4px;padding-right:2px;">Actions</div>
           </div>
-          <div id="emp-conge-list"></div>
+<div id="emp-conge-list"></div>
         </div>
       </div>
 
@@ -1954,11 +1952,10 @@ function updateCreditStatus(){
   var done=DATA[key];
   var el=document.getElementById('credit-status');
   if(!el)return;
-  if(done){
-    el.innerHTML='<span style="color:#6ddc82;font-size:11px;">✓ '+mois+' credite le '+fmt(done)+'</span>';
-  } else {
-    el.innerHTML='<span style="color:#ffb950;font-size:11px;">⚠ '+mois+' non credite</span>';
-  }
+  var doneDeduire=DATA[getDeduireKey()];
+  var creditInfo=done?'<span style="color:#6ddc82;font-size:11px;">✓ Credite le '+fmt(done)+'</span>':'<span style="color:#ffb950;font-size:11px;">⚠ Non credite</span>';
+  var deduireInfo=doneDeduire?'<span style="color:#6ddc82;font-size:11px;margin-left:8px;">✓ Deduit le '+fmt(doneDeduire)+'</span>':'<span style="color:#ffb950;font-size:11px;margin-left:8px;">⚠ Non deduit</span>';
+  if(el) el.innerHTML=creditInfo+deduireInfo;
   // Alertes entrée en cours de mois
   var alerts=[];
   // Alertes solde à zéro (solde N-1 et N tous les deux à 0)
@@ -2007,6 +2004,59 @@ function updateCreditStatus(){
   if(alertEl) alertEl.innerHTML=allAlerts.length
     ?'<div style="display:flex;flex-direction:column;gap:4px;margin-bottom:8px;">'+allAlerts.join('')+'</div>'
     :'';
+}
+
+function getDeduireKey(){
+  var d=new Date();
+  return 'deduire_'+d.getFullYear()+'_'+(d.getMonth()+1);
+}
+
+function deduireConges(){
+  var key=getDeduireKey();
+  if(DATA[key]){showToast('Deduction deja effectuee ce mois-ci le '+fmt(DATA[key]));return;}
+  var t=today();
+  // Mois precedent
+  var d=new Date();
+  var moisPrec=new Date(d.getFullYear(),d.getMonth()-1,1);
+  var debutMoisPrec=moisPrec.getFullYear()+'-'+(moisPrec.getMonth()<9?'0':'')+(moisPrec.getMonth()+1)+'-01';
+  var finMoisPrec=new Date(d.getFullYear(),d.getMonth(),0);
+  var finMoisPrecStr=finMoisPrec.getFullYear()+'-'+(finMoisPrec.getMonth()<9?'0':'')+(finMoisPrec.getMonth()+1)+'-'+String(finMoisPrec.getDate()).padStart(2,'0');
+  var totalDeduit=0;
+  DATA.empConges.forEach(function(ec){
+    // Trouver l'empId correspondant
+    var emp=DATA.employes.find(function(e){
+      return (e.nom||'').trim().toLowerCase()===(ec.nom||'').trim().toLowerCase()
+          &&(e.prenom||'').trim().toLowerCase()===(ec.prenom||'').trim().toLowerCase();
+    });
+    if(!emp) return;
+    // Congés approuvés dont la fin est dans le mois précédent
+    var joursADeduire=0;
+    DATA.conges.forEach(function(c){
+      if(c.empId!==emp.id) return;
+      if(c.statut!=='Approuvé') return;
+      // Congé terminé dans le mois précédent
+      if(c.end>=debutMoisPrec&&c.end<=finMoisPrecStr){
+        joursADeduire+=daysBetween(c.start,c.end);
+      }
+    });
+    if(joursADeduire<=0) return;
+    totalDeduit+=joursADeduire;
+    // Déduire de N-1 en priorité
+    var soldeN1=parseFloat(ec.soldeN)||0;
+    var dedN1=Math.min(joursADeduire,Math.max(0,soldeN1));
+    var dedN=joursADeduire-dedN1;
+    ec.prisN=(parseFloat(ec.prisN)||0)+dedN1;
+    ec.soldeN=(parseFloat(ec.acquisN)||0)-(parseFloat(ec.prisN)||0);
+    if(dedN>0){
+      ec.prisN1=(parseFloat(ec.prisN1)||0)+dedN;
+      ec.soldeN1=(parseFloat(ec.acquisN1)||0)-(parseFloat(ec.prisN1)||0);
+    }
+  });
+  DATA[key]=today();
+  saveData();
+  renderEmpCongeList();
+  updateCreditStatus();
+  showToast('Deduction effectuee — '+totalDeduit+' jours deduits au total',4000);
 }
 
 function crediterMois(){
@@ -2201,6 +2251,17 @@ function saveEmpConge(){var nom=document.getElementById('ec-nom').value.trim(),p
 function deleteEmpConge(id){if(!confirm('Supprimer ?'))return;DATA.empConges=DATA.empConges.filter(function(e){return e.id!==id;});saveData();renderEmpCongeList();}
 window._fbReady=false;window._fbDb=null;
 var _b=document.getElementById('btn-add-empconge');if(_b)_b.onclick=function(){openModalEmpConge(null);};
+function resetCreditErreur(){
+  // Juste supprimer la cle du credit de mai 2026 — sans toucher aux données
+  var keyMai='credit_2026_5';
+  if(DATA[keyMai]){
+    delete DATA[keyMai];
+    saveData();
+    showToast('Bouton credit de mai 2026 reinitialise',3000);
+    updateCreditStatus();
+  }
+}
+
 function _startApp(){
   DATA.sites.site1.name='BE 1';DATA.sites.site2.name='BE 2';DATA.sites.site3.name='BE 3';
   localStorage.setItem('basalte_data',JSON.stringify(DATA));
