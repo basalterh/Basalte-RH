@@ -736,7 +736,7 @@ tr:last-child td{border-bottom:none;}
       </div>
       <div class="form-row full"><div class="form-group"><label class="form-label">Notes</label><textarea id="conge-notes" class="form-textarea"></textarea></div></div>
     </div>
-    <div class="modal-footer"><button class="btn btn-ghost" data-close="modal-conge">Annuler</button><button class="btn btn-primary" id="btn-save-conge">Enregistrer</button></div>
+    <div class="modal-footer"><button class="btn btn-ghost" data-close="modal-conge">Annuler</button><button class="btn btn-primary" onclick="saveConge()">Enregistrer</button></div>
   </div>
 </div>
 
@@ -1730,7 +1730,33 @@ function renderCongesTable(){
 }
 function deleteConge(id){if(!confirm('Supprimer ce congé ?'))return;DATA.conges=DATA.conges.filter(function(c){return c.id!==id;});saveData();renderConges();}
 function openModalConge(id){var modal=document.getElementById('modal-conge');document.getElementById('modal-conge-title').textContent=id?'Modifier le congé':'Poser un congé';var emps=getActiveEmployes();document.getElementById('conge-emp').innerHTML=emps.map(e=>`<option value="${e.id}">${e.nom} ${e.prenom}</option>`).join('');if(id){var c=DATA.conges.find(function(x){return x.id===id;});if(!c)return;document.getElementById('conge-id').value=c.id;document.getElementById('conge-emp').value=c.empId;document.getElementById('conge-start').value=c.start;document.getElementById('conge-end').value=c.end;document.getElementById('conge-type').value=c.type;document.getElementById('conge-statut').value=c.statut;document.getElementById('conge-notes').value=c.notes||'';}else{document.getElementById('conge-id').value='';document.getElementById('conge-start').value='';document.getElementById('conge-end').value='';document.getElementById('conge-type').value='Congés payés';document.getElementById('conge-statut').value='Approuvé';document.getElementById('conge-notes').value='';}modal.classList.add('active');attachCloseListeners();}
-document.getElementById('btn-save-conge').addEventListener('click',function(){var start=document.getElementById('conge-start').value;var end=document.getElementById('conge-end').value;if(!start||!end){alert('Dates début et fin obligatoires');return;}var id=document.getElementById('conge-id').value;var existing=DATA.conges.find(function(c){return c.id===id;});var conge={id:id||genId(),empId:document.getElementById('conge-emp').value,start,end,type:document.getElementById('conge-type').value,statut:document.getElementById('conge-statut').value,notes:document.getElementById('conge-notes').value,createdAt:existing?existing.createdAt:today()};if(id){var idx=DATA.conges.findIndex(function(c){return c.id===id;});if(idx>=0)DATA.conges[idx]=conge;}else DATA.conges.push(conge);saveData();closeModal('modal-conge');renderSection(currentSection);showToast(id?'Congé modifié ✓':'Congé ajouté ✓');});
+function saveConge(){
+  var start=document.getElementById('conge-start').value;
+  var end=document.getElementById('conge-end').value;
+  if(!start||!end){showToast('Dates debut et fin obligatoires');return;}
+  var id=document.getElementById('conge-id').value;
+  var existing=DATA.conges.find(function(c){return c.id===id;});
+  var conge={
+    id:id||genId(),
+    empId:document.getElementById('conge-emp').value,
+    start:start,end:end,
+    type:document.getElementById('conge-type').value,
+    statut:document.getElementById('conge-statut').value,
+    notes:document.getElementById('conge-notes').value,
+    createdAt:existing?existing.createdAt:today()
+  };
+  if(id){
+    var idx=DATA.conges.findIndex(function(c){return c.id===id;});
+    if(idx>=0) DATA.conges[idx]=conge;
+    else DATA.conges.push(conge);
+  } else {
+    DATA.conges.push(conge);
+  }
+  saveData();
+  closeModal('modal-conge');
+  renderSection(currentSection);
+  showToast(id?'Conge modifie':'Conge ajoute');
+}
 var calYear=new Date().getFullYear(),calMonth=new Date().getMonth(),calView='month',calWeekOffset=0;
 var calFilters={entree:true,sortie:true,conge:true,evenement:true,rdv:true};
 
