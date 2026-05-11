@@ -895,7 +895,8 @@ function loadData(){try{var saved=localStorage.getItem('basalte_data');if(saved)
 function saveData(){
   localStorage.setItem('basalte_data',JSON.stringify(DATA));
   if(window._fbReady&&window._fbDb){
-    window._fbDb.ref('data').set(DATA).catch(function(e){console.warn(e);});
+    var cleanData=JSON.parse(JSON.stringify(DATA,function(k,v){return v===undefined?null:v;}));
+    window._fbDb.ref('data').set(cleanData).catch(function(e){console.warn(e);});
     var now=new Date();
     var _u=window._fbCurrentUser||'inconnu';
     var j=['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
@@ -1743,7 +1744,7 @@ function saveConge(){
     type:document.getElementById('conge-type').value,
     statut:document.getElementById('conge-statut').value,
     notes:document.getElementById('conge-notes').value,
-    createdAt:existing?existing.createdAt:today()
+    createdAt:(existing&&existing.createdAt)||today()
   };
   if(id){
     var idx=DATA.conges.findIndex(function(c){return c.id===id;});
